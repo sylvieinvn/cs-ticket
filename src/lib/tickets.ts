@@ -65,6 +65,7 @@ export function newTicket(
     dispute: "none",
     disputeReason: "",
     assignee: ctx.meId,
+    agent: o.agent || "",
     createdAt: at,
     createdBy: ctx.meId,
     firstResponseAt: "",

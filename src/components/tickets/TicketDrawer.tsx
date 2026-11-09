@@ -13,7 +13,7 @@ import { addLog, setStatus, slaState, track17 } from "@/lib/tickets";
 import type { LogKind, Ticket } from "@/lib/types";
 
 type EditableField =
-  | "status" | "client" | "type" | "priority" | "channel" | "assignee" | "orderName" | "orderDate" | "customerName"
+  | "status" | "client" | "type" | "priority" | "channel" | "agent" | "assignee" | "orderName" | "orderDate" | "customerName"
   | "customerEmail" | "total" | "country" | "tracking" | "shipStatus" | "carrier" | "supplier" | "dispute"
   | "disputeReason" | "resolution" | "refundAmount";
 
@@ -60,7 +60,8 @@ export function TicketDrawer({ ticketId, onClose }: { ticketId: string; onClose(
   const setField = (f: EditableField, raw: string) =>
     mutate((x) => {
       if (f === "status") return setStatus(x, raw, by);
-      const v = f === "refundAmount" ? Number(raw) || 0 : raw;
+      const v = f === "refundAmount" ? Number(raw) || 0 : f === "agent" ? raw.trim() : raw;
+      if (f === "agent") addLog(x, "system", "Agent: " + (raw.trim() || "bỏ agent"), by);
       if (f === "assignee") addLog(x, "system", "Phân công: " + (d.nameOf(raw) || "bỏ phân công"), by);
       if (f === "shipStatus") addLog(x, "system", "Trạng thái giao: " + label(SHIP, raw), by);
       if (f === "dispute") addLog(x, "system", "Tranh chấp: " + label(DISPUTE, raw), by);
@@ -130,6 +131,7 @@ export function TicketDrawer({ ticketId, onClose }: { ticketId: string; onClose(
   const sla = slaState(t, d.slaFor(t));
   const qaScore = QA.filter((q) => t.qa?.[q[0]]).length;
   const assignees = [...new Set([by, ...d.tickets.map((x) => x.assignee)].filter(Boolean))];
+  const agentNames = [...new Set(d.tickets.map((x) => (x.agent || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   const s = t.summary;
   const hasSummary = !!(s?.issue || s?.done || s?.next);
 
@@ -178,6 +180,19 @@ export function TicketDrawer({ ticketId, onClose }: { ticketId: string; onClose(
                   })
                 }
               />
+            </label>
+            <label>
+              Agent
+              <CommitInput
+                type="text"
+                list="agent-names"
+                placeholder="Tên agent xử lý"
+                value={t.agent || ""}
+                onCommit={(v) => setField("agent", v)}
+              />
+              <datalist id="agent-names">
+                {agentNames.map((a) => <option key={a} value={a} />)}
+              </datalist>
             </label>
             <label>
               Phụ trách

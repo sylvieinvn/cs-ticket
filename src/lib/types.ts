@@ -43,6 +43,8 @@ export interface Ticket {
   dispute: string;
   disputeReason: string;
   assignee: string;
+  /** Free-text agent name (works without team accounts). Optional: older tickets don't have it. */
+  agent?: string;
   createdAt: string;
   createdBy: string;
   firstResponseAt: string;

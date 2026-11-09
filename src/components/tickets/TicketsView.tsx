@@ -13,7 +13,8 @@ import { isActive, newTicket, slaState, track17 } from "@/lib/tickets";
 import type { Ticket } from "@/lib/types";
 import { TicketDrawer } from "./TicketDrawer";
 
-type SortKey = "orderName" | "customerName" | "type" | "status" | "shipStatus" | "tracking" | "dispute" | "assignee" | "createdAt";
+type SortKey =
+  | "orderName" | "customerName" | "type" | "status" | "shipStatus" | "tracking" | "dispute" | "agent" | "assignee" | "createdAt";
 
 const COLUMNS: [SortKey | null, string][] = [
   ["orderName", "Đơn"],
@@ -23,12 +24,13 @@ const COLUMNS: [SortKey | null, string][] = [
   ["shipStatus", "Giao hàng"],
   ["tracking", "Tracking"],
   ["dispute", "Tranh chấp"],
+  ["agent", "Agent"],
   ["assignee", "Phụ trách"],
   ["createdAt", "Tạo lúc"],
   [null, "SLA"],
 ];
 
-const EMPTY_FILTERS = { q: "", channel: "", sent: "", type: "", ship: "", dispute: "", agent: "", overdue: false };
+const EMPTY_FILTERS = { q: "", channel: "", sent: "", type: "", ship: "", dispute: "", agentName: "", agent: "", overdue: false };
 
 export function TicketsView() {
   const d = useData();
@@ -57,6 +59,11 @@ export function TicketsView() {
     return ids;
   }, [d.tickets, d.me]);
 
+  const agentNames = useMemo(
+    () => [...new Set(d.tickets.map((t) => (t.agent || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [d.tickets],
+  );
+
   const rows = useMemo(() => {
     const q = f.q.trim().toLowerCase();
     const meId = d.me?.id ?? "";
@@ -70,11 +77,13 @@ export function TicketsView() {
         if (f.sent && t.summary?.sentiment !== f.sent) return false;
         if (f.ship && (f.ship === "__unchecked" ? t.shipStatus : t.shipStatus !== f.ship)) return false;
         if (f.dispute && t.dispute !== f.dispute) return false;
+        if (f.agentName === "__none" && (t.agent || "").trim()) return false;
+        if (f.agentName && f.agentName !== "__none" && (t.agent || "").trim() !== f.agentName) return false;
         if (f.agent === "__me" && t.assignee !== meId) return false;
         if (f.agent === "__none" && t.assignee) return false;
         if (f.agent && !f.agent.startsWith("__") && t.assignee !== f.agent) return false;
         if (f.overdue && !slaState(t, d.slaFor(t)).overdue) return false;
-        if (q && ![t.orderName, t.customerEmail, t.customerName, t.tracking, t.supplier, t.carrier].join(" ").toLowerCase().includes(q))
+        if (q && ![t.orderName, t.customerEmail, t.customerName, t.tracking, t.supplier, t.carrier, t.agent].join(" ").toLowerCase().includes(q))
           return false;
         return true;
       })
@@ -138,7 +147,7 @@ export function TicketsView() {
   function exportCsv() {
     const head = [
       "Client", "Mã đơn", "Ngày đặt", "Khách hàng", "Email", "Giá trị", "Quốc gia", "Loại vấn đề", "Ưu tiên", "Trạng thái",
-      "Giao hàng", "Tracking", "Carrier", "Supplier", "Tranh chấp", "Lý do tranh chấp", "Phụ trách", "Tạo lúc",
+      "Giao hàng", "Tracking", "Carrier", "Supplier", "Tranh chấp", "Lý do tranh chấp", "Agent", "Phụ trách", "Tạo lúc",
       "Phản hồi đầu lúc", "Giải quyết lúc", "TG phản hồi (giờ)", "TG giải quyết (giờ)", "Cách giải quyết", "Tiền hoàn",
       "CSAT", "QA (/5)", "Quá SLA", "Kênh", "Thái độ KH", "Tóm tắt vấn đề", "CS đã làm", "Bước tiếp theo",
     ];
@@ -147,7 +156,7 @@ export function TicketsView() {
       return [
         d.clientName(t.client), t.orderName, (t.orderDate || "").slice(0, 10), t.customerName, t.customerEmail, t.total,
         t.country, t.type, label(PRIORITY, t.priority), label(STATUSES, t.status), label(SHIP, t.shipStatus), t.tracking,
-        t.carrier, t.supplier, label(DISPUTE, t.dispute), t.disputeReason, d.nameOf(t.assignee), t.createdAt,
+        t.carrier, t.supplier, label(DISPUTE, t.dispute), t.disputeReason, t.agent || "", d.nameOf(t.assignee), t.createdAt,
         t.firstResponseAt, t.resolvedAt, t.firstResponseAt && s.frtH != null ? s.frtH.toFixed(2) : "",
         t.resolvedAt ? s.resH.toFixed(2) : "", t.resolution, t.refundAmount || 0, t.csat || "",
         QA.filter((q) => t.qa?.[q[0]]).length, s.overdue ? "Có" : "", label(CHANNELS, t.channel || "email"),
@@ -176,7 +185,7 @@ export function TicketsView() {
       <div className="bar">
         <input
           type="search"
-          placeholder="Tìm mã đơn, email, tracking, tên KH…"
+          placeholder="Tìm mã đơn, email, tracking, tên KH, agent…"
           style={{ minWidth: 260 }}
           value={f.q}
           onChange={(e) => setFilter("q", e.target.value)}
@@ -200,6 +209,11 @@ export function TicketsView() {
         <select value={f.dispute} onChange={(e) => setFilter("dispute", e.target.value)} aria-label="Tranh chấp">
           <option value="">Mọi tranh chấp</option>
           {DISPUTE.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+        <select value={f.agentName} onChange={(e) => setFilter("agentName", e.target.value)} aria-label="Agent">
+          <option value="">Mọi agent</option>
+          <option value="__none">Chưa có agent</option>
+          {agentNames.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
         <select value={f.agent} onChange={(e) => setFilter("agent", e.target.value)} aria-label="Nhân viên">
           <option value="">Mọi nhân viên</option>
@@ -250,7 +264,7 @@ export function TicketsView() {
             ))}
             {d.tickets.length > 0 && rows.length === 0 && (
               <tr className="row-static">
-                <td colSpan={11} className="empty">Không có ticket khớp bộ lọc.</td>
+                <td colSpan={COLUMNS.length + 1} className="empty">Không có ticket khớp bộ lọc.</td>
               </tr>
             )}
           </tbody>
@@ -309,6 +323,7 @@ function TicketRow({ t, checked, onCheck, onOpen }: { t: Ticket; checked: boolea
         )}
       </td>
       <td>{t.dispute === "none" ? <Dash /> : <Pill options={DISPUTE} value={t.dispute} />}</td>
+      <td>{t.agent?.trim() || <Dash />}</td>
       <td>{d.nameOf(t.assignee) || <Dash />}</td>
       <td className="muted note">{fmtDT(t.createdAt)}</td>
       <td>
