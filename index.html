@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS Ticket Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#fff;--ink:#1b1f24;--muted:#6b7280;--line:#e5e7eb;--soft:#f1f3f6;
+  --accent:#2f5bea;--accent-soft:#e8eefe;--ok:#15803d;--ok-soft:#e7f6ec;--warn:#b45309;--warn-soft:#fdf3e2;
+  --bad:#b91c1c;--bad-soft:#fdecec;--info:#0e7490;--info-soft:#e3f5f8;--violet:#6d28d9;--violet-soft:#f0eafd;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Be Vietnam Pro",system-ui,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+nav{background:#14181f;color:#cfd5df;padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+nav .brand{color:#fff;font-weight:700;font-size:16px;padding:4px 10px 16px}
+nav .brand small{display:block;font-weight:400;color:#8b94a3;font-size:12px}
+nav a{color:inherit;text-decoration:none;padding:9px 10px;border-radius:8px;display:flex;justify-content:space-between;align-items:center}
+nav a:hover{background:#222833}
+nav a.on{background:#2a3140;color:#fff}
+nav .count{background:#3a4252;border-radius:20px;padding:0 8px;font-size:12px}
+nav .foot{margin-top:auto;font-size:12px;color:#8b94a3;padding:10px}
+main{padding:22px 26px;min-width:0}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.bar .grow{flex:1}
+input[type=text],input[type=search],input[type=date],input[type=number],select,textarea{
+  border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{width:100%;resize:vertical;min-height:70px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:default}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600;background:#fafbfc;position:sticky;top:0;cursor:pointer;user-select:none;white-space:nowrap}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:#fafbff}
+.tablewrap{overflow:auto;max-height:calc(100vh - 230px)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:500;white-space:nowrap}
+.s-new{background:var(--accent-soft);color:var(--accent)}
+.s-open{background:var(--warn-soft);color:var(--warn)}
+.s-wait{background:var(--violet-soft);color:var(--violet)}
+.s-done{background:var(--ok-soft);color:var(--ok)}
+.s-closed{background:var(--soft);color:var(--muted)}
+.s-bad{background:var(--bad-soft);color:var(--bad)}
+.s-info{background:var(--info-soft);color:var(--info)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+.muted{color:var(--muted)}
+.flag{color:var(--bad);font-weight:600;font-size:12px}
+.empty{padding:40px;text-align:center;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{padding:14px 16px}
+.kpi .l{color:var(--muted);font-size:12px}
+.kpi .v{font-size:24px;font-weight:700;margin-top:2px}
+.kpi .h{font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.card{padding:16px}
+.card h3{margin:0 0 12px;font-size:14px}
+.hbar{display:grid;grid-template-columns:150px 1fr 40px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.hbar .track{background:var(--soft);border-radius:4px;height:14px;overflow:hidden}
+.hbar .fill{background:var(--accent);height:100%;border-radius:4px}
+.cols{display:flex;align-items:flex-end;gap:3px;height:150px;border-bottom:1px solid var(--line);padding-top:6px}
+.cols .c{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px;position:relative}
+.cols .c:hover{filter:brightness(1.2)}
+.cols .c span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+/* drawer */
+.overlay{position:fixed;inset:0;background:rgba(15,20,30,.35);display:none;z-index:20}
+.overlay.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(640px,100%);background:#fff;z-index:21;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.12)}
+.drawer.on{transform:none}
+.dhead{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.dhead h2{margin:0;font-size:17px;flex:1}
+.dbody{padding:16px 20px;overflow:auto;flex:1}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:16px}
+.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.fgrid label.full{grid-column:1/-1}
+.fgrid input,.fgrid select{width:100%}
+.sect{font-weight:600;margin:18px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.log{border-left:2px solid var(--line);padding-left:14px;margin-left:4px}
+.log .e{margin-bottom:12px;font-size:13px}
+.log .e .m{color:var(--muted);font-size:12px}
+.log .e.reply .t{background:var(--ok-soft);padding:6px 10px;border-radius:8px;display:inline-block}
+.log .e.note .t{background:var(--soft);padding:6px 10px;border-radius:8px;display:inline-block}
+.qa label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);margin:4px 0}
+.stars button{border:none;background:none;font-size:22px;cursor:pointer;color:#d1d5db;padding:0 2px}
+.stars button.on{color:#f59e0b}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:30;background:rgba(15,20,30,.35)}
+.modal.on{display:flex}
+.modal .box{background:#fff;border-radius:12px;padding:20px;width:min(520px,94vw)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#14181f;color:#fff;padding:9px 16px;border-radius:8px;display:none;z-index:40}
+.toast.on{display:block}
+.notice{background:var(--warn-soft);color:var(--warn);padding:9px 12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 12px;cursor:pointer;font-size:13px}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+@media (max-width:820px){.app{grid-template-columns:1fr}nav{flex-direction:row;overflow:auto;padding:8px}nav .brand,nav .foot{display:none}.grid2{grid-template-columns:1fr}.fgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="brand">CS Ticket Desk<small>Quản lý ticket đơn Shopify</small></div>
+    <select id="gClient" style="margin:0 6px 10px;background:#222833;color:#fff;border-color:#3a4252"><option value="">Tất cả client</option></select>
+    <a href="#tickets" data-v="tickets">Ticket <span class="count" id="nOpen">0</span></a>
+    <a href="#orders" data-v="orders">Đơn hàng</a>
+    <a href="#reports" data-v="reports">Report &amp; Analytics</a>
+    <a href="#settings" data-v="settings">Cài đặt</a>
+    <div class="foot" id="whoami">Đang kết nối…</div>
+  </nav>
+  <main>
+    <div id="dbNotice" class="notice" style="display:none"></div>
+
+    <!-- TICKETS -->
+    <section id="v-tickets">
+      <h1>Ticket</h1>
+      <p class="sub">Theo dõi trạng thái xử lý, vận chuyển và tranh chấp cho từng đơn.</p>
+      <div class="tabs" id="statusTabs"></div>
+      <div class="bar">
+        <input type="search" id="q" placeholder="Tìm mã đơn, email, tracking, tên KH…" style="min-width:260px">
+        <select id="fChannel"><option value="">Mọi kênh</option><option value="email">Email</option><option value="inbox">Shopify Inbox</option><option value="other">Khác</option></select>
+        <select id="fSent"><option value="">Mọi thái độ KH</option></select>
+        <select id="fType"><option value="">Mọi loại vấn đề</option></select>
+        <select id="fShip"><option value="">Mọi trạng thái giao</option></select>
+        <select id="fDispute"><option value="">Mọi tranh chấp</option></select>
+        <select id="fAgent"><option value="">Mọi nhân viên</option><option value="__me">Của tôi</option><option value="__none">Chưa phân công</option></select>
+        <label class="muted" style="font-size:13px"><input type="checkbox" id="fOverdue"> Quá SLA</label>
+        <span class="grow"></span>
+        <button class="btn" id="btnSyncTr" title="Lấy từ dữ liệu đơn đã đồng bộ cho ticket đã chọn; nếu không chọn, cho mọi ticket đang mở chưa có tracking">Cập nhật tracking</button>
+        <button class="btn" id="btn17">Tra 17Track (đã chọn)</button>
+        <button class="btn" id="btnExport">Xuất CSV</button>
+        <button class="btn primary" id="btnNew">+ Ticket mới</button>
+      </div>
+      <div class="panel tablewrap">
+        <table>
+          <thead><tr>
+            <th style="width:30px"><input type="checkbox" id="selAll"></th>
+            <th data-s="orderName">Đơn</th><th data-s="customerName">Khách hàng</th><th data-s="type">Vấn đề</th>
+            <th data-s="status">Trạng thái</th><th data-s="shipStatus">Giao hàng</th><th data-s="tracking">Tracking</th>
+            <th data-s="dispute">Tranh chấp</th><th data-s="assignee">Phụ trách</th><th data-s="createdAt">Tạo lúc</th><th>SLA</th>
+          </tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+        <div class="empty" id="tEmpty" style="display:none">Chưa có ticket nào. Vào <a href="#orders">Nhập đơn hàng</a> để tạo ticket từ đơn Shopify hoặc file CSV.</div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="v-orders" style="display:none">
+      <h1>Đơn hàng</h1>
+      <p class="sub">Đơn của các client tự đổ về qua email Shopify Flow (tiêu đề bắt đầu bằng [CSD]). Có thể nhập thêm file CSV.</p>
+      <div class="grid2">
+        <div class="panel card">
+          <h3>Đồng bộ từ email</h3>
+          <div class="bar" style="margin-bottom:6px">
+            <button class="btn primary" id="btnSync">Đồng bộ ngay</button>
+            <label class="muted" style="font-size:13px"><input type="checkbox" id="autoSync"> Tự đồng bộ 3 phút/lần khi đang mở app</label>
+          </div>
+          <div class="muted" id="syncMsg" style="font-size:12.5px"></div>
+        </div>
+        <div class="panel card">
+          <h3>Nhập file CSV</h3>
+          <div class="bar">
+            <select id="csvClient"></select>
+            <input type="file" id="csvFile" accept=".csv,text/csv">
+          </div>
+          <label class="muted" style="font-size:13px"><input type="checkbox" id="csvUpdate" checked> Cập nhật tracking/supplier cho ticket đã có</label>
+          <div class="muted" id="csvMsg" style="font-size:12.5px"></div>
+        </div>
+      </div>
+      <div class="bar">
+        <input type="search" id="oSearch" placeholder="Tìm mã đơn, tên KH, email, tracking… (nhiều mã: cách nhau dấu phẩy)" style="min-width:300px;flex:1;max-width:420px">
+        <input type="date" id="oFrom" title="Đặt từ ngày"> <span class="muted">→</span> <input type="date" id="oTo" title="Đến ngày">
+        <select id="oFTicket"><option value="">Mọi đơn</option><option value="none">Chưa có ticket</option><option value="has">Đã có ticket</option></select>
+        <select id="oFTrack"><option value="">Có/không tracking</option><option value="yes">Có tracking</option><option value="no">Chưa có tracking</option></select>
+        <select id="oFShip"><option value="">Mọi trạng thái giao</option></select>
+        <select id="oFFin"><option value="">Mọi thanh toán</option></select>
+        <strong id="oCount">0 đơn</strong><span class="grow"></span>
+        <select id="bulkType"></select>
+        <button class="btn primary" id="btnBulkCreate" disabled>Tạo ticket cho đơn đã chọn</button>
+      </div>
+      <div class="panel tablewrap">
+        <table>
+          <thead><tr><th style="width:30px"><input type="checkbox" id="oSelAll"></th><th>Client</th><th>Đơn</th><th>Ngày</th><th>Khách hàng</th><th>Thanh toán</th><th>Fulfillment</th><th>Giao hàng</th><th>Tracking</th><th>Ticket</th></tr></thead>
+          <tbody id="oBody"></tbody>
+        </table>
+        <div class="empty" id="oEmpty">Chưa có đơn nào. Bấm "Đồng bộ ngay" để lấy đơn từ email Shopify Flow.</div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="v-reports" style="display:none">
+      <h1>Report &amp; Analytics</h1>
+      <p class="sub">Tính trên các ticket tạo trong khoảng thời gian đã chọn.</p>
+      <div class="bar">
+        <input type="date" id="rFrom"> <span class="muted">→</span> <input type="date" id="rTo">
+        <select id="rAgent"><option value="">Toàn đội</option></select>
+        <button class="btn sm" data-range="7">7 ngày</button><button class="btn sm" data-range="30">30 ngày</button><button class="btn sm" data-range="month">Tháng này</button>
+        <span class="grow"></span>
+        <button class="btn" id="btnRepExport">Xuất báo cáo CSV</button>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="panel card" style="margin-bottom:14px"><h3>Ticket theo ngày</h3><div class="cols" id="chDays"></div><div class="axis" id="chDaysAx"></div></div>
+      <div class="grid2">
+        <div class="panel card"><h3>Theo loại vấn đề</h3><div id="chType"></div></div>
+        <div class="panel card"><h3>Cách giải quyết</h3><div id="chRes"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel card"><h3>Theo kênh liên hệ</h3><div id="chChan"></div></div>
+        <div class="panel card"><h3>Thái độ khách hàng</h3><div id="chSent"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel card"><h3>Trạng thái giao hàng</h3><div id="chShip"></div></div>
+        <div class="panel card"><h3>Tranh chấp / chargeback</h3><div id="chDisp"></div></div>
+      </div>
+      <div class="panel card">
+        <h3>Đánh giá theo nhân viên</h3>
+        <div style="overflow:auto"><table id="agentTable"></table></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="v-settings" style="display:none">
+      <h1>Cài đặt</h1>
+      <p class="sub">Mục tiêu SLA dùng để tính "đúng hạn" trong danh sách ticket và báo cáo. Áp dụng cho cả đội.</p>
+      <div class="panel card" style="max-width:520px">
+        <div class="fgrid">
+          <label>Phản hồi lần đầu trong (giờ)<input type="number" id="setFrt" min="1"></label>
+          <label>Giải quyết trong (giờ)<input type="number" id="setRes" min="1"></label>
+          <label class="full">Tiền tệ hiển thị<input type="text" id="setCur" placeholder="USD"></label>
+        </div>
+        <button class="btn primary" id="btnSaveSet">Lưu</button>
+      </div>
+      <div class="panel card" style="margin-top:14px">
+        <h3>Client</h3>
+        <p class="muted" style="font-size:13px;margin:0 0 10px">Client tự xuất hiện khi email Flow đầu tiên của store đó về. Để trống ô SLA thì dùng mục tiêu chung ở trên.</p>
+        <div style="overflow:auto"><table><thead><tr><th>Tên hiển thị</th><th>Store</th><th>Phản hồi đầu (giờ)</th><th>Giải quyết (giờ)</th><th>Đơn</th><th>Ticket mở</th><th>Email gần nhất</th></tr></thead><tbody id="clBody"></tbody></table></div>
+        <div class="bar" style="margin-top:10px"><button class="btn primary" id="btnSaveClients">Lưu client</button></div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="panel card">
+          <h3>Dữ liệu &amp; đồng bộ</h3>
+          <div class="fgrid">
+            <label>Lần đầu: lấy email của (ngày gần nhất)<input type="number" id="setLookback" min="1" max="60"></label>
+            <label>Giữ đơn không có ticket trong (ngày)<input type="number" id="setRetention" min="30" max="365"></label>
+          </div>
+          <button class="btn" id="btnSaveSync">Lưu</button>
+          <div class="muted" id="usageMsg" style="font-size:12.5px;margin-top:8px"></div>
+        </div>
+        <div class="panel card">
+          <h3>Sao lưu</h3>
+          <p class="muted" style="font-size:13px;margin:0 0 10px">Tải toàn bộ ticket, đơn và client về máy dưới dạng file JSON. Nên sao lưu mỗi tuần.</p>
+          <button class="btn primary" id="btnBackup">Tải bản sao lưu</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="ov"></div>
+<aside class="drawer" id="dr">
+  <div class="dhead"><h2 id="dTitle">Ticket</h2><button class="btn danger sm" id="dDel">Xoá</button><button class="btn sm" id="dClose">Đóng</button></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
+<div class="modal" id="mConfirm"><div class="box"><p id="mText"></p><div class="bar" style="justify-content:flex-end;margin:0"><button class="btn" id="mNo">Huỷ</button><button class="btn primary" id="mYes">Đồng ý</button></div></div></div>
+<div class="modal" id="mCopy"><div class="box"><p>Không tải file được ở chế độ xem này. Sao chép nội dung CSV bên dưới:</p><textarea id="copyArea" style="min-height:200px" readonly></textarea><div class="bar" style="justify-content:flex-end;margin:8px 0 0"><button class="btn" id="copyBtn">Sao chép</button><button class="btn primary" id="copyClose">Đóng</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- constants ---------- */
+const STATUSES=[["new","Mới","s-new"],["open","Đang xử lý","s-open"],["wait_cus","Chờ khách","s-wait"],["wait_sup","Chờ supplier/carrier","s-wait"],["resolved","Đã giải quyết","s-done"],["closed","Đã đóng","s-closed"]];
+const TYPES=["Chưa nhận hàng","Giao chậm","Tracking không cập nhật","Hàng hỏng / lỗi","Sai hàng / thiếu hàng","Yêu cầu hoàn tiền","Huỷ đơn","Đổi địa chỉ","Hỏi thông tin","Khác"];
+const SHIP=[["","Chưa kiểm tra","s-closed"],["not_found","Not found","s-closed"],["info","Info received","s-info"],["transit","In transit","s-info"],["pickup","Pick up","s-wait"],["out","Out for delivery","s-info"],["delivered","Delivered","s-done"],["undelivered","Undelivered","s-bad"],["alert","Alert","s-bad"],["expired","Expired","s-bad"]];
+const DISPUTE=[["none","Không","s-closed"],["inquiry","Inquiry","s-wait"],["open","Đang tranh chấp","s-bad"],["won","Thắng","s-done"],["lost","Thua","s-bad"]];
+const RESOLUTIONS=["","Hướng dẫn / giải thích","Gửi lại hàng (reship)","Đổi hàng","Hoàn tiền một phần","Hoàn tiền toàn bộ","Huỷ đơn","Khách tự rút yêu cầu","Không xử lý được"];
+const PRIORITY=[["low","Thấp"],["normal","Bình thường"],["high","Cao"],["urgent","Khẩn"]];
+const CHANNELS=[["email","Email"],["inbox","Shopify Inbox"],["other","Khác"]];
+const SENT=[["","Chưa rõ","s-closed"],["positive","Hài lòng","s-done"],["neutral","Trung lập","s-info"],["frustrated","Bực bội","s-open"],["angry","Rất tức giận","s-bad"],["chargeback","Doạ chargeback","s-bad"]];
+const WAITING=[["","—"],["customer","Chờ khách"],["cs","Chờ CS"],["supplier","Chờ supplier/carrier"],["none","Không chờ ai"]];
+const QA=[["q1","Phản hồi đúng hạn"],["q2","Thông tin chính xác"],["q3","Giọng điệu chuyên nghiệp, đồng cảm"],["q4","Giải quyết triệt để vấn đề"],["q5","Ghi chú & cập nhật trạng thái đầy đủ"]];
+const lab=(arr,k)=>(arr.find(x=>x[0]===k)||arr[0]);
+
+/* ---------- state ---------- */
+let db=null,user=null,mcp=null,downloads=null,sample=null,meId=null;
+let tickets=[];               // {id,...}
+let settings={frtHours:24,resHours:72,currency:"USD",lookbackDays:14,retentionDays:90};
+let orders=[];                // đồng bộ từ email Flow (db: orders)
+let names={};                 // id -> name
+let view="tickets",statusTab="active",sortKey="createdAt",sortDir=-1;
+let selected=new Set(),oSelected=new Set(),openId=null;
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const now=()=>new Date().toISOString();
+const fmtDT=s=>s?new Date(s).toLocaleString("vi-VN",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}):"";
+const fmtD=s=>s?new Date(s).toLocaleDateString("vi-VN"):"";
+const hrs=(a,b)=>(new Date(b)-new Date(a))/36e5;
+const fmtH=h=>h==null||isNaN(h)?"–":h<1?Math.round(h*60)+" phút":h<48?h.toFixed(1)+" giờ":(h/24).toFixed(1)+" ngày";
+const money=v=>(Number(v)||0).toLocaleString("en-US",{maximumFractionDigits:2});
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),2600)}
+function confirmBox(text){return new Promise(r=>{$("#mText").textContent=text;$("#mConfirm").classList.add("on");$("#mYes").onclick=()=>{$("#mConfirm").classList.remove("on");r(true)};$("#mNo").onclick=()=>{$("#mConfirm").classList.remove("on");r(false)}})}
+const nameOf=id=>id?(names[id]||(id===meId?"Tôi":"Nhân viên")):"";
+
+/* ---------- persistence ---------- */
+async function saveTicket(t){
+  t.updatedAt=now();
+  if(db){try{await db.collection("tickets").doc(t.id).set(clean(t));}catch(e){toast("Không lưu được: "+(e.message||e.code||"lỗi"));}}
+  else{const i=tickets.findIndex(x=>x.id===t.id);if(i>=0)tickets[i]=t;else tickets.push(t);renderAll();}
+}
+async function deleteTicket(id){
+  if(db){try{await db.collection("tickets").doc(id).delete();}catch(e){toast("Không xoá được");}}
+  else{tickets=tickets.filter(t=>t.id!==id);renderAll();}
+}
+function clean(o){return JSON.parse(JSON.stringify(o))}
+
+/* ---------- ticket helpers ---------- */
+function newTicket(o={}){
+  return {id:uid(),client:o.client||curClient||"",orderName:o.orderName||"",orderId:o.orderId||"",orderDate:o.orderDate||"",customerName:o.customerName||"",customerEmail:o.customerEmail||"",
+    total:o.total||"",currency:o.currency||settings.currency,country:o.country||"",tracking:o.tracking||"",trackingUrl:o.trackingUrl||"",carrier:o.carrier||"",supplier:o.supplier||"",
+    type:o.type||TYPES[0],priority:"normal",channel:o.channel||"email",summary:null,status:"new",shipStatus:o.shipStatus||"",dispute:"none",disputeReason:"",
+    assignee:meId||"",createdAt:now(),createdBy:meId||"",firstResponseAt:"",resolvedAt:"",
+    resolution:"",refundAmount:0,csat:0,qa:{},qaBy:"",log:[{at:now(),by:meId||"",kind:"system",text:"Tạo ticket"}]};
+}
+function isActive(t){return !["resolved","closed"].includes(t.status)}
+function slaState(t){
+  const n=new Date().toISOString();
+  const frtH=t.firstResponseAt?hrs(t.createdAt,t.firstResponseAt):(isActive(t)?hrs(t.createdAt,n):null);
+  const resH=t.resolvedAt?hrs(t.createdAt,t.resolvedAt):hrs(t.createdAt,n);
+  const L=slaFor(t);
+  const frtBreach=frtH!=null&&frtH>L.frt;
+  const resBreach=resH>L.res&&(isActive(t)||!!t.resolvedAt);
+  return {frtH,resH,frtBreach,resBreach,overdue:isActive(t)&&((!t.firstResponseAt&&frtBreach)||resBreach)};
+}
+function addLog(t,kind,text){t.log=t.log||[];t.log.push({at:now(),by:meId||"",kind,text})}
+function setStatus(t,s){
+  if(t.status===s)return;
+  addLog(t,"system",`Trạng thái: ${lab(STATUSES,t.status)[1]} → ${lab(STATUSES,s)[1]}`);
+  t.status=s;
+  if(["resolved","closed"].includes(s)&&!t.resolvedAt)t.resolvedAt=now();
+  if(!["resolved","closed"].includes(s))t.resolvedAt="";
+  if(s==="wait_cus"&&!t.firstResponseAt)t.firstResponseAt=now();
+}
+const track17=nums=>"https://t.17track.net/en#nums="+encodeURIComponent(nums.flatMap(n=>String(n).split(/[\s,;]+/)).filter(Boolean).join(","));
+
+/* ---------- names ---------- */
+async function resolveNames(){
+  if(!user)return;
+  const ids=[...new Set(tickets.flatMap(t=>[t.assignee,t.createdBy,t.qaBy,...(t.log||[]).map(l=>l.by)]).filter(Boolean))];
+  if(meId&&!ids.includes(meId))ids.push(meId);
+  const missing=ids.filter(i=>!(i in names));
+  if(!missing.length)return;
+  try{const ps=await user.profiles(missing);let ch=false;for(const id of missing){const n=ps?.[id]?.name||"";names[id]=n||"Nhân viên";ch=true}if(ch)renderAll();}catch(e){}
+}
+
+/* ---------- routing ---------- */
+function route(){
+  const h=(location.hash||"#tickets").slice(1);
+  view=["tickets","orders","reports","settings"].includes(h)?h:"tickets";
+  if(view!=="tickets"&&openId)closeDrawer();
+  for(const v of ["tickets","orders","reports","settings"])$("#v-"+v).style.display=v===view?"":"none";
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.dataset.v===view));
+  renderAll();
+}
+window.addEventListener("hashchange",route);
+
+/* ---------- TICKET LIST ---------- */
+function fillSelects(){
+  $("#fType").innerHTML='<option value="">Mọi loại vấn đề</option>'+TYPES.map(t=>`<option>${esc(t)}</option>`).join("");
+  $("#fShip").innerHTML='<option value="">Mọi trạng thái giao</option>'+SHIP.map(s=>`<option value="${s[0]||"__unchecked"}">${s[1]}</option>`).join("");
+  $("#fDispute").innerHTML='<option value="">Mọi tranh chấp</option>'+DISPUTE.map(s=>`<option value="${s[0]}">${s[1]}</option>`).join("");
+  $("#fSent").innerHTML='<option value="">Mọi thái độ KH</option>'+SENT.filter(s=>s[0]).map(s=>`<option value="${s[0]}">${s[1]}</option>`).join("");
+  $("#bulkType").innerHTML=TYPES.map(t=>`<option>${esc(t)}</option>`).join("");
+}
+function agentOptions(sel,extra){
+  const ids=[...new Set(tickets.map(t=>t.assignee).filter(Boolean))];
+  if(meId&&!ids.includes(meId))ids.unshift(meId);
+  const cur=sel.value;
+  sel.innerHTML=extra+ids.map(i=>`<option value="${esc(i)}">${esc(nameOf(i))}</option>`).join("");
+  sel.value=cur;
+}
+function filtered(){
+  const ch=$("#fChannel").value,se=$("#fSent").value;
+  const q=$("#q").value.trim().toLowerCase(),ty=$("#fType").value,sh=$("#fShip").value,di=$("#fDispute").value,ag=$("#fAgent").value,od=$("#fOverdue").checked;
+  return tickets.filter(t=>{
+    if(!inClient(t))return false;
+    if(statusTab==="active"&&!isActive(t))return false;
+    if(statusTab!=="active"&&statusTab!=="all"&&t.status!==statusTab)return false;
+    if(ty&&t.type!==ty)return false;
+    if(ch&&(t.channel||"email")!==ch)return false;
+    if(se&&t.summary?.sentiment!==se)return false;
+    if(sh&&(sh==="__unchecked"?t.shipStatus:t.shipStatus!==sh))return false;
+    if(di&&t.dispute!==di)return false;
+    if(ag==="__me"&&t.assignee!==meId)return false;
+    if(ag==="__none"&&t.assignee)return false;
+    if(ag&&!ag.startsWith("__")&&t.assignee!==ag)return false;
+    if(od&&!slaState(t).overdue)return false;
+    if(q&&![t.orderName,t.customerEmail,t.customerName,t.tracking,t.supplier,t.carrier].join(" ").toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>{const x=sortKey==="assignee"?nameOf(a.assignee):a[sortKey]||"",y=sortKey==="assignee"?nameOf(b.assignee):b[sortKey]||"";return x>y?sortDir:x<y?-sortDir:0});
+}
+function renderTabs(){
+  const pool=tickets.filter(inClient);
+  const c=k=>k==="active"?pool.filter(isActive).length:k==="all"?pool.length:pool.filter(t=>t.status===k).length;
+  const tabs=[["active","Đang mở"],...STATUSES.map(s=>[s[0],s[1]]),["all","Tất cả"]];
+  $("#statusTabs").innerHTML=tabs.map(([k,l])=>`<button data-k="${k}" class="${k===statusTab?"on":""}">${l} · ${c(k)}</button>`).join("");
+  $("#nOpen").textContent=c("active");
+}
+function renderTickets(){
+  renderTabs();agentOptions($("#fAgent"),'<option value="">Mọi nhân viên</option><option value="__me">Của tôi</option><option value="__none">Chưa phân công</option>');
+  const rows=filtered();
+  $("#tEmpty").style.display=tickets.length?"none":"";
+  $("#tBody").innerHTML=rows.map(t=>{
+    const st=lab(STATUSES,t.status),sh=lab(SHIP,t.shipStatus),dp=lab(DISPUTE,t.dispute),sla=slaState(t);
+    return `<tr data-id="${t.id}">
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="rowSel" data-id="${t.id}" ${selected.has(t.id)?"checked":""}></td>
+      <td><strong>${esc(t.orderName||"—")}</strong>${t.priority==="urgent"||t.priority==="high"?` <span class="flag">${t.priority==="urgent"?"Khẩn":"Cao"}</span>`:""}${!curClient&&t.client?`<div class="muted" style="font-size:12px">${esc(clientName(t.client))}</div>`:""}</td>
+      <td>${esc(t.customerName)}<div class="muted" style="font-size:12px">${esc(t.customerEmail)}</div></td>
+      <td>${esc(t.type)}<div class="muted" style="font-size:12px">${lab(CHANNELS,t.channel||"email")[1]}${t.summary?.sentiment?` · <span class="pill ${lab(SENT,t.summary.sentiment)[2]}" style="font-size:11px;padding:0 7px">${lab(SENT,t.summary.sentiment)[1]}</span>`:""}</div></td>
+      <td><span class="pill ${st[2]}">${st[1]}</span></td>
+      <td><span class="pill ${sh[2]}">${sh[1]}</span></td>
+      <td class="mono">${t.tracking?`<a href="${track17([t.tracking])}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(t.tracking)}</a>`:'<span class="muted">—</span>'}</td>
+      <td>${t.dispute==="none"?'<span class="muted">—</span>':`<span class="pill ${dp[2]}">${dp[1]}</span>`}</td>
+      <td>${esc(nameOf(t.assignee))||'<span class="muted">—</span>'}</td>
+      <td class="muted" style="font-size:12.5px">${fmtDT(t.createdAt)}</td>
+      <td>${isActive(t)?(sla.overdue?'<span class="flag">Quá hạn</span>':'<span class="muted">OK</span>'):(sla.resBreach?'<span class="muted">Trễ</span>':'<span class="pill s-done">Đúng hạn</span>')}</td>
+    </tr>`}).join("");
+  if(tickets.length&&!rows.length)$("#tBody").innerHTML='<tr><td colspan="11" class="empty">Không có ticket khớp bộ lọc.</td></tr>';
+  $("#selAll").checked=rows.length&&rows.every(t=>selected.has(t.id));
+}
+$("#statusTabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){statusTab=b.dataset.k;renderTickets()}});
+["#q","#fChannel","#fSent","#fType","#fShip","#fDispute","#fAgent","#fOverdue"].forEach(s=>$(s).addEventListener("input",renderTickets));
+document.querySelectorAll("#v-tickets th[data-s]").forEach(th=>th.addEventListener("click",()=>{const k=th.dataset.s;if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1}renderTickets()}));
+$("#tBody").addEventListener("click",e=>{const tr=e.target.closest("tr[data-id]");if(tr)openTicket(tr.dataset.id)});
+$("#tBody").addEventListener("change",e=>{if(e.target.classList.contains("rowSel")){e.target.checked?selected.add(e.target.dataset.id):selected.delete(e.target.dataset.id)}});
+$("#selAll").addEventListener("change",e=>{filtered().forEach(t=>e.target.checked?selected.add(t.id):selected.delete(t.id));renderTickets()});
+$("#btn17").addEventListener("click",()=>{
+  const nums=tickets.filter(t=>selected.has(t.id)&&t.tracking).map(t=>t.tracking);
+  if(!nums.length)return toast("Chọn ticket có tracking trước");
+  const chunks=[];for(let i=0;i<nums.length;i+=40)chunks.push(nums.slice(i,i+40));
+  const a=document.createElement("a");a.href=track17(chunks[0]);a.target="_blank";a.rel="noopener";a.click();
+  if(chunks.length>1)toast(`17Track tối đa 40 mã/lần — đã mở 40 mã đầu`);
+});
+$("#btnSyncTr").addEventListener("click",syncTracking);
+$("#btnNew").addEventListener("click",async()=>{const t=newTicket();if(!db){tickets.push(t)}await saveTicket(t);openTicket(t.id,t)});
+
+/* ---------- DRAWER ---------- */
+function openTicket(id,fallback){
+  openId=id;const t=tickets.find(x=>x.id===id)||fallback;if(!t)return;
+  $("#ov").classList.add("on");$("#dr").classList.add("on");renderDrawer(t);
+}
+function closeDrawer(){openId=null;$("#ov").classList.remove("on");$("#dr").classList.remove("on")}
+$("#ov").onclick=closeDrawer;$("#dClose").onclick=closeDrawer;
+$("#dDel").onclick=async()=>{if(!openId)return;if(await confirmBox("Xoá ticket này? Không thể hoàn tác.")){const id=openId;closeDrawer();await deleteTicket(id);toast("Đã xoá ticket")}};
+const opt=(arr,v)=>arr.map(a=>Array.isArray(a)?`<option value="${a[0]}" ${a[0]===v?"selected":""}>${a[1]}</option>`:`<option ${a===v?"selected":""}>${esc(a)}</option>`).join("");
+function renderDrawer(t){
+  const sla=slaState(t);
+  const qaScore=QA.filter(q=>t.qa?.[q[0]]).length;
+  $("#dTitle").textContent=(t.orderName||"Ticket mới")+(t.customerName?" · "+t.customerName:"");
+  const ids=[...new Set([meId,...tickets.map(x=>x.assignee)].filter(Boolean))];
+  $("#dBody").innerHTML=`
+  <div class="bar">
+    <span class="pill ${lab(STATUSES,t.status)[2]}">${lab(STATUSES,t.status)[1]}</span>
+    <span class="muted" style="font-size:12.5px">Phản hồi đầu: <b>${fmtH(sla.frtH)}</b>${t.firstResponseAt?"":" (chưa)"} · Giải quyết: <b>${t.resolvedAt?fmtH(sla.resH):"–"}</b></span>
+    ${sla.overdue?'<span class="flag">Quá SLA</span>':""}
+  </div>
+  <div class="sect">Xử lý</div>
+  <div class="fgrid">
+    <label>Trạng thái<select data-f="status">${opt(STATUSES.map(s=>[s[0],s[1]]),t.status)}</select></label>
+    <label>Client<select data-f="client"><option value="">— Chưa gán —</option>${Object.keys(clients).map(k=>`<option value="${esc(k)}" ${k===t.client?"selected":""}>${esc(clientName(k))}</option>`).join("")}</select></label>
+    <label>Loại vấn đề<select data-f="type">${opt(TYPES,t.type)}</select></label>
+    <label>Ưu tiên<select data-f="priority">${opt(PRIORITY,t.priority)}</select></label>
+    <label>Kênh liên hệ<select data-f="channel">${opt(CHANNELS,t.channel||"email")}</select></label>
+    <label>Thái độ khách<select data-sf="sentiment">${opt(SENT.map(s=>[s[0],s[1]]),t.summary?.sentiment||"")}</select></label>
+    <label>Phụ trách<select data-f="assignee"><option value="">— Chưa phân công —</option>${ids.map(i=>`<option value="${esc(i)}" ${i===t.assignee?"selected":""}>${esc(nameOf(i))}</option>`).join("")}</select></label>
+  </div>
+  <div class="sect">Tóm tắt trao đổi với khách</div>
+  ${t.summary?.issue||t.summary?.done||t.summary?.next?`<div class="panel" style="padding:12px 14px;margin-bottom:10px;font-size:13px">
+    <div><b>Vấn đề:</b> ${esc(t.summary.issue||"—")}</div>
+    <div><b>CS đã làm:</b> ${esc(t.summary.done||"—")}</div>
+    <div><b>Đang chờ:</b> ${lab(WAITING,t.summary.waitingOn||"")[1]} · <b>Bước tiếp theo:</b> ${esc(t.summary.next||"—")}</div>
+    <div class="muted" style="margin-top:4px;font-size:12px">${t.summary.msgCount?t.summary.msgCount+" tin nhắn · ":""}Cập nhật ${fmtDT(t.summary.updatedAt)}${t.summary.suggestType&&t.summary.suggestType!==t.type?` · AI gợi ý loại: <a href="#" id="applyType">${esc(t.summary.suggestType)}</a>`:""}</div>
+  </div>`:'<p class="muted" style="font-size:13px;margin:0 0 8px">Chưa có tóm tắt.</p>'}
+  <textarea id="convoText" placeholder="Dán nội dung chat Shopify Inbox hoặc chuỗi email với khách vào đây…" style="min-height:90px"></textarea>
+  <div class="bar" style="margin-top:8px">
+    <button class="btn primary sm" id="btnSumm" ${sample?"":"disabled title='AI chưa sẵn sàng ở chế độ xem này'"}>Tóm tắt bằng AI</button>
+    <span class="muted" id="summMsg" style="font-size:12.5px">Chỉ lưu bản tóm tắt, không lưu nội dung gốc.</span>
+  </div>
+  <div class="sect">Đơn hàng</div>
+  <div class="fgrid">
+    <label>Mã đơn<input type="text" data-f="orderName" value="${esc(t.orderName)}"></label>
+    <label>Ngày đặt<input type="date" data-f="orderDate" value="${esc((t.orderDate||"").slice(0,10))}"></label>
+    <label>Khách hàng<input type="text" data-f="customerName" value="${esc(t.customerName)}"></label>
+    <label>Email<input type="text" data-f="customerEmail" value="${esc(t.customerEmail)}"></label>
+    <label>Giá trị đơn<input type="text" data-f="total" value="${esc(t.total)}"></label>
+    <label>Quốc gia<input type="text" data-f="country" value="${esc(t.country)}"></label>
+  </div>
+  <div class="sect">Vận chuyển</div>
+  <div class="fgrid">
+    <label>Tracking number<input type="text" data-f="tracking" value="${esc(t.tracking)}" class="mono"></label>
+    <label>Trạng thái giao (từ 17Track)<select data-f="shipStatus">${opt(SHIP.map(s=>[s[0],s[1]]),t.shipStatus)}</select></label>
+    <label>Carrier<input type="text" data-f="carrier" value="${esc(t.carrier)}"></label>
+    <label>Supplier<input type="text" data-f="supplier" value="${esc(t.supplier)}"></label>
+    <label class="full">${t.tracking?`<a href="${track17([t.tracking])}" target="_blank" rel="noopener" class="btn sm" style="align-self:flex-start;text-decoration:none;display:inline-block">Mở trên 17Track ↗</a>${t.trackingUrl&&/^https:\/\//.test(t.trackingUrl)?` <a href="${esc(t.trackingUrl)}" target="_blank" rel="noopener" class="btn sm" style="text-decoration:none;display:inline-block">Trang tracking của supplier ↗</a>`:""}`:'<span class="muted">Nhập tracking để tra trên 17Track</span>'}</label>
+  </div>
+  <div class="sect">Tranh chấp &amp; kết quả</div>
+  <div class="fgrid">
+    <label>Tranh chấp / chargeback<select data-f="dispute">${opt(DISPUTE.map(s=>[s[0],s[1]]),t.dispute)}</select></label>
+    <label>Lý do tranh chấp<input type="text" data-f="disputeReason" value="${esc(t.disputeReason)}" placeholder="vd: Item not received"></label>
+    <label>Cách giải quyết<select data-f="resolution">${opt(RESOLUTIONS.map(r=>[r,r||"— Chưa có —"]),t.resolution)}</select></label>
+    <label>Số tiền hoàn (${esc(t.currency||settings.currency)})<input type="number" step="0.01" data-f="refundAmount" value="${esc(t.refundAmount||0)}"></label>
+  </div>
+  <div class="sect">Đánh giá chất lượng</div>
+  <div class="fgrid">
+    <label>CSAT khách hàng chấm
+      <div class="stars" id="stars">${[1,2,3,4,5].map(n=>`<button data-n="${n}" class="${n<=t.csat?"on":""}">★</button>`).join("")}${t.csat?` <button data-n="0" style="font-size:12px;color:var(--muted)">xoá</button>`:""}</div>
+    </label>
+    <label>Điểm QA nội bộ: <b style="color:var(--ink)">${qaScore}/5</b>${t.qaBy?` <span>— chấm bởi ${esc(nameOf(t.qaBy))}</span>`:""}
+      <div class="qa">${QA.map(q=>`<label><input type="checkbox" data-qa="${q[0]}" ${t.qa?.[q[0]]?"checked":""}> ${q[1]}</label>`).join("")}</div>
+    </label>
+  </div>
+  <div class="sect">Trao đổi &amp; ghi chú</div>
+  <textarea id="noteText" placeholder="Nội dung đã gửi khách, hoặc ghi chú nội bộ…"></textarea>
+  <div class="bar" style="margin-top:8px">
+    <button class="btn primary sm" id="addReply">Ghi nhận đã phản hồi khách</button>
+    <button class="btn sm" id="addNote">Thêm ghi chú nội bộ</button>
+  </div>
+  <div class="log">${(t.log||[]).slice().reverse().map(l=>`<div class="e ${l.kind}"><div class="m">${fmtDT(l.at)} · ${esc(nameOf(l.by)||"Hệ thống")}${l.kind==="reply"?" · đã phản hồi KH":l.kind==="note"?" · ghi chú":""}</div><div class="t">${esc(l.text)}</div></div>`).join("")}</div>`;
+
+  const cur=()=>clean(tickets.find(x=>x.id===t.id)||t);
+  $("#dBody").querySelectorAll("[data-f]").forEach(el=>el.addEventListener("change",async()=>{
+    const x=cur(),f=el.dataset.f;let v=el.value;
+    if(f==="refundAmount")v=Number(v)||0;
+    if(f==="status")setStatus(x,v);
+    else{
+      if(f==="assignee")addLog(x,"system","Phân công: "+(nameOf(v)||"bỏ phân công"));
+      if(f==="shipStatus")addLog(x,"system","Trạng thái giao: "+lab(SHIP,v)[1]);
+      if(f==="dispute")addLog(x,"system","Tranh chấp: "+lab(DISPUTE,v)[1]);
+      if(f==="resolution"&&v)addLog(x,"system","Giải quyết: "+v);
+      x[f]=v;
+    }
+    await saveTicket(x);if(!db)renderDrawer(x);
+  }));
+  $("#dBody").querySelectorAll("[data-sf]").forEach(el=>el.addEventListener("change",async()=>{const x=cur();x.summary={...(x.summary||{}),[el.dataset.sf]:el.value,updatedAt:now()};addLog(x,"system","Thái độ KH: "+lab(SENT,el.value)[1]);await saveTicket(x);if(!db)renderDrawer(x)}));
+  const at=$("#applyType");if(at)at.onclick=async e=>{e.preventDefault();const x=cur();addLog(x,"system","Loại vấn đề: "+x.summary.suggestType);x.type=x.summary.suggestType;await saveTicket(x);if(!db)renderDrawer(x)};
+  $("#btnSumm").onclick=()=>summarize(t.id);
+  $("#stars").addEventListener("click",async e=>{e.preventDefault();const b=e.target.closest("button");if(!b)return;const x=cur();x.csat=Number(b.dataset.n);addLog(x,"system","CSAT: "+(x.csat||"xoá"));await saveTicket(x);if(!db)renderDrawer(x)});
+  $("#dBody").querySelectorAll("[data-qa]").forEach(el=>el.addEventListener("change",async()=>{const x=cur();x.qa=x.qa||{};x.qa[el.dataset.qa]=el.checked;x.qaBy=meId||"";await saveTicket(x);if(!db)renderDrawer(x)}));
+  const add=kind=>async()=>{const txt=$("#noteText").value.trim();if(!txt)return toast("Nhập nội dung trước");const x=cur();addLog(x,kind,txt);
+    if(kind==="reply"){if(!x.firstResponseAt)x.firstResponseAt=now();if(x.status==="new")setStatus(x,"open");}
+    await saveTicket(x);if(!db)renderDrawer(x)};
+  $("#addReply").onclick=add("reply");$("#addNote").onclick=add("note");
+}
+
+/* ---------- AI SUMMARY ---------- */
+async function summarize(id){
+  const txt=$("#convoText").value.trim();
+  if(!txt)return toast("Dán nội dung trao đổi trước");
+  if(!sample)return toast("AI chưa sẵn sàng ở chế độ xem này");
+  const t0=tickets.find(x=>x.id===id);if(!t0)return;
+  $("#btnSumm").disabled=true;$("#summMsg").textContent="Đang tóm tắt…";
+  const prompt=`Bạn là trưởng nhóm CS của một shop thương mại điện tử. Đọc đoạn hội thoại giữa khách hàng và nhân viên CS (kênh: ${lab(CHANNELS,t0.channel||"email")[1]}, đơn ${t0.orderName||"không rõ"}) và trả về DUY NHẤT một object JSON, viết bằng tiếng Việt, ngắn gọn:
+{"issue":"vấn đề chính khách nêu, tối đa 1 câu",
+"done":"những gì CS đã làm/đã hứa, tối đa 2 câu",
+"waitingOn":"customer|cs|supplier|none — ai đang cần hành động tiếp",
+"next":"bước tiếp theo CS nên làm, tối đa 1 câu",
+"sentiment":"positive|neutral|frustrated|angry|chargeback — chargeback nếu khách nhắc tranh chấp, chargeback, PayPal/ngân hàng, báo cáo",
+"suggestType":"chọn đúng một trong: ${TYPES.join(" | ")}",
+"msgCount":số tin nhắn ước tính (số nguyên),
+"firstAgentReplyAt":"thời điểm CS trả lời lần đầu theo ISO 8601 nếu đoạn hội thoại có ghi giờ rõ ràng, ngược lại để chuỗi rỗng"}
+Không thêm nhận xét ngoài JSON. Hội thoại:
+"""
+${txt.slice(0,30000)}
+"""`;
+  try{
+    const r=await sample.json(prompt,{modelTier:"quick"});
+    const x=clean(tickets.find(y=>y.id===id)||t0);
+    const pick=(arr,v)=>arr.some(a=>a[0]===v)?v:"";
+    x.summary={issue:String(r.issue||""),done:String(r.done||""),next:String(r.next||""),waitingOn:pick(WAITING,r.waitingOn),
+      sentiment:pick(SENT,r.sentiment),suggestType:TYPES.includes(r.suggestType)?r.suggestType:"",msgCount:Number(r.msgCount)||0,updatedAt:now(),by:meId||""};
+    if(r.firstAgentReplyAt&&!x.firstResponseAt){const d=new Date(r.firstAgentReplyAt);if(!isNaN(d)&&d>=new Date(x.createdAt)-30*864e5&&d<=new Date())x.firstResponseAt=d.toISOString()}
+    if(x.summary.sentiment==="chargeback"&&x.priority!=="urgent"){x.priority="urgent";addLog(x,"system","Tự nâng ưu tiên: Khẩn (khách nhắc chargeback)")}
+    addLog(x,"system","Cập nhật tóm tắt trao đổi bằng AI");
+    await saveTicket(x);if(!db)renderDrawer(x);
+    toast("Đã tóm tắt");
+  }catch(e){
+    $("#summMsg").textContent=e?.code==="rate_limited"?"AI đang quá tải, thử lại sau ít phút":e?.code==="not_granted"?"Chưa được cấp quyền dùng AI":"Không tóm tắt được: "+(e?.message||e?.code||"lỗi");
+    const b=$("#btnSumm");if(b)b.disabled=false;
+  }
+}
+
+/* ---------- CLIENTS ---------- */
+let clients={};               // shop -> {shop,name,frtHours,resHours,lastEmailAt}
+let curClient="";try{curClient=localStorage.getItem("csdClient")||""}catch(e){}
+const clientName=k=>k?(clients[k]?.name||k.replace(/\.myshopify\.com$/,"")):"";
+const inClient=x=>!curClient||(x.client||"")===curClient;
+function slaFor(t){const c=clients[t.client||""];return {frt:Number(c?.frtHours)||settings.frtHours,res:Number(c?.resHours)||settings.resHours}}
+function renderClientSelects(){
+  const keys=Object.keys(clients).sort((a,b)=>clientName(a).localeCompare(clientName(b)));
+  const g=$("#gClient");g.innerHTML='<option value="">Tất cả client</option>'+keys.map(k=>`<option value="${esc(k)}">${esc(clientName(k))}</option>`).join("");
+  g.value=keys.includes(curClient)?curClient:"";if(g.value!==curClient)curClient=g.value;
+  const c=$("#csvClient"),cv=c.value;c.innerHTML='<option value="">— Chọn client của file —</option>'+keys.map(k=>`<option value="${esc(k)}">${esc(clientName(k))}</option>`).join("");c.value=keys.includes(cv)?cv:(curClient||"");
+}
+$("#gClient").addEventListener("change",e=>{curClient=e.target.value;try{localStorage.setItem("csdClient",curClient)}catch(_){};selected.clear();oSelected.clear();renderAll()});
+async function ensureClient(shop,name){
+  if(!shop)return;
+  const c=clients[shop];
+  if(!c){clients[shop]={shop,name:name||shop.replace(/\.myshopify\.com$/,""),createdAt:now()};if(db)await db.collection("clients").doc(safeId(shop)).set(clients[shop]).catch(()=>{});renderClientSelects()}
+}
+
+/* ---------- ORDERS (từ email Shopify Flow) ---------- */
+const safeId=s=>String(s).replace(/[^A-Za-z0-9_-]/g,"_").slice(0,140);
+const orderKey=o=>(o.client||"")+"|"+o.orderName;
+const orderDocId=(shop,name)=>safeId(shop+"__"+name);
+const SHIPMAP={CONFIRMED:"info",LABEL_PRINTED:"info",LABEL_PURCHASED:"info",READY_FOR_PICKUP:"pickup",PICKED_UP:"transit",CARRIER_PICKED_UP:"transit",IN_TRANSIT:"transit",OUT_FOR_DELIVERY:"out",ATTEMPTED_DELIVERY:"alert",DELAYED:"alert",DELIVERED:"delivered",FAILURE:"undelivered"};
+const CSD_KEYS=["event","shop","store_name","order_id","order","created_at","customer","email","country","total","financial","fulfillment","ship_status","tracking"];
+/* Flow gộp các dòng thành 1 dòng → tách theo tên trường cố định */
+function parseCSD(body){
+  let t=String(body||"");const a=t.indexOf("CSD-BEGIN"),b=t.indexOf("CSD-END");
+  if(a<0)return null;t=t.slice(a+9,b>a?b:undefined);
+  const re=new RegExp("(?:^|\\s)("+CSD_KEYS.join("|")+"):","g");const marks=[];let m;
+  while((m=re.exec(t)))marks.push({k:m[1],start:m.index+m[0].length,at:m.index});
+  const out={};marks.forEach((mk,i)=>{const end=i+1<marks.length?marks[i+1].at:t.length;if(!(mk.k in out))out[mk.k]=t.slice(mk.start,end).trim()});
+  if(!out.shop||!out.order)return null;
+  const tr=(out.tracking||"").split(";").map(x=>x.trim()).filter(Boolean).map(x=>{const [n,c,u]=x.split("|");return {n:(n||"").trim(),c:(c||"").trim(),u:(u||"").trim()}}).filter(x=>x.n);
+  const [amt,cur]=(out.total||"").split(/\s+/);
+  return {event:out.event||"",shop:out.shop.toLowerCase(),storeName:out.store_name||"",orderName:out.order,orderId:out.order_id||"",orderDate:out.created_at||"",
+    customerName:out.customer||"",customerEmail:out.email||"",country:out.country||"",total:amt||"",currency:cur||"",financial:out.financial||"",fulfillment:out.fulfillment||"",
+    shipRaw:(out.ship_status||"").toUpperCase(),tracking:[...new Set(tr.map(x=>x.n))].join(", "),carrier:[...new Set(tr.map(x=>x.c).filter(c=>c&&c!=="Other"))].join(", "),trackingUrl:tr[0]?.u||""};
+}
+/* gộp một email vào đơn; trả về đơn mới nếu có thay đổi */
+function mergeOrder(prev,p,msgDate){
+  const o={...(prev||{}),client:p.shop,orderName:p.orderName};let ch=!prev;
+  const set=(k,v)=>{if(v&&o[k]!==v){o[k]=v;ch=true}};
+  for(const k of ["orderId","orderDate","customerName","customerEmail","country","total","currency"])set(k,p[k]);
+  const newer=!o.statusAt||msgDate>=o.statusAt;
+  if(newer){set("financial",p.financial);set("fulfillment",p.fulfillment)}
+  if(p.tracking&&(newer||!o.tracking)){set("tracking",p.tracking);set("carrier",p.carrier);set("trackingUrl",p.trackingUrl)}
+  if(p.shipRaw&&(!o.shipAt||msgDate>=o.shipAt)){const st=SHIPMAP[p.shipRaw]||"";if(o.shipRaw!==p.shipRaw){o.shipRaw=p.shipRaw;o.shipStatus=st||o.shipStatus||"";o.shipAt=msgDate;ch=true}}
+  if(newer&&ch)o.statusAt=msgDate;
+  if(ch){o.updatedAt=now();o.lastEvent=p.event}
+  return ch?o:null;
+}
+let syncing=false,syncState={};
+async function gmailCall(tool,input){
+  const r=await mcp.callTool("Gmail",tool,input,{cache:false});
+  let p=r?.payload??r;
+  if(typeof p==="string"){try{p=JSON.parse(p)}catch(e){}}
+  return p||{};
+}
+function syncErrText(e){
+  const c=e?.code;
+  if(c==="server_not_connected")return "Tài khoản này chưa kết nối Gmail nhận dữ liệu (claude.ai → Settings → Connectors → Gmail).";
+  if(c==="needs_reauth")return "Kết nối Gmail đã hết hạn — kết nối lại trong claude.ai → Settings → Connectors.";
+  if(c==="not_in_manifest"||c==="approval_required"||c==="consent_required")return "Chưa cho phép app đọc Gmail. Bấm Đồng bộ ngay và chọn Allow.";
+  if(c==="selection_required")return "Có nhiều kết nối Gmail — chọn một kết nối khi claude.ai hỏi.";
+  if(c==="server_unavailable"||c==="rate_limited")return "Gmail tạm thời không phản hồi, thử lại sau ít phút.";
+  return "Lỗi đồng bộ: "+(e?.message||c||"không rõ");
+}
+async function syncEmails(manual){
+  if(syncing)return;
+  if(!mcp||!db){$("#syncMsg").textContent="Chế độ xem này không đồng bộ được email.";return}
+  syncing=true;const btn=$("#btnSync");btn.disabled=true;btn.textContent="Đang đồng bộ…";
+  const st=$("#syncMsg");let nMsg=0,nOrd=0,nTk=0;
+  try{
+    const stDoc=db.doc("sync/gmail");
+    const lookback=Number(settings.lookbackDays)||14;
+    const since=syncState.lastSyncAt?new Date(Date.parse(syncState.lastSyncAt)-2*864e5):new Date(Date.now()-lookback*864e5);
+    const q=`subject:CSD "CSD-BEGIN" after:${since.getFullYear()}/${since.getMonth()+1}/${since.getDate()}`;
+    const done=new Set(syncState.processed||[]);
+    const threads=[];let pageToken="";
+    for(let page=0;page<20;page++){
+      const r=await gmailCall("search_threads",{query:q,pageSize:50,view:"THREAD_VIEW_METADATA_ONLY",...(pageToken?{pageToken}:{})});
+      threads.push(...(r.threads||[]));pageToken=r.nextPageToken||"";if(!pageToken)break;
+    }
+    const todo=threads.filter(t=>{const ids=(t.messages||[]).map(m=>m.id);const cnt=t.messageCount||ids.length;return !(cnt<=ids.length&&ids.length&&ids.every(id=>done.has(id)))});
+    const msgs=[];
+    for(let i=0;i<todo.length;i++){
+      st.textContent=`Đang đọc email ${i+1}/${todo.length}…`;
+      const th=await gmailCall("get_thread",{threadId:todo[i].id,messageFormat:"PLAIN_TEXT"});
+      for(const m of th.messages||[])if(!done.has(m.id))msgs.push(m);
+    }
+    msgs.sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    const changed=new Map();
+    for(const m of msgs){
+      const p=parseCSD(m.plaintextBody||m.snippet||"");done.add(m.id);nMsg++;
+      if(!p)continue;
+      await ensureClient(p.shop,p.storeName);
+      if(p.storeName&&clients[p.shop])clients[p.shop].lastEmailAt=m.date;
+      const key=p.shop+"|"+p.orderName;
+      const prev=changed.get(key)||orders.find(o=>orderKey(o)===key);
+      const o=mergeOrder(prev,p,m.date||now());
+      if(o)changed.set(key,o);
+    }
+    for(const o of changed.values()){
+      await db.collection("orders").doc(orderDocId(o.client,o.orderName)).set(clean(o));nOrd++;
+      nTk+=await applyOrderToTickets(o);
+    }
+    for(const k of new Set([...changed.values()].map(o=>o.client)))if(clients[k]?.lastEmailAt)await db.collection("clients").doc(safeId(k)).set(clean(clients[k])).catch(()=>{});
+    syncState={lastSyncAt:now(),by:meId||"",processed:[...done].slice(-4000),lastResult:{messages:nMsg,orders:nOrd,tickets:nTk},error:""};
+    await stDoc.set(syncState);
+    await purgeOld();
+    try{localStorage.setItem("csdAuto","1")}catch(e){}
+    if(manual)toast(`Đã đồng bộ: ${nMsg} email mới · ${nOrd} đơn cập nhật · ${nTk} ticket cập nhật`);
+  }catch(e){
+    st.textContent=syncErrText(e);
+    if(manual)toast(syncErrText(e));
+    syncing=false;btn.disabled=false;btn.textContent="Đồng bộ ngay";return;
+  }
+  syncing=false;btn.disabled=false;btn.textContent="Đồng bộ ngay";renderSyncMsg();renderAll();
+}
+function renderSyncMsg(){
+  const s=syncState;const el=$("#syncMsg");if(!el)return;
+  if(!s.lastSyncAt){el.textContent="Chưa đồng bộ lần nào.";return}
+  el.textContent=`Lần gần nhất: ${fmtDT(s.lastSyncAt)}${s.by?" bởi "+nameOf(s.by):""} · ${s.lastResult?.messages||0} email mới, ${s.lastResult?.orders||0} đơn, ${s.lastResult?.tickets||0} ticket cập nhật`;
+}
+$("#btnSync").addEventListener("click",()=>syncEmails(true));
+let autoTimer=null;
+function setupAuto(){
+  let on=false;try{on=localStorage.getItem("csdAutoOn")!=="0"&&localStorage.getItem("csdAuto")==="1"}catch(e){}
+  $("#autoSync").checked=on;clearInterval(autoTimer);
+  if(on&&mcp){autoTimer=setInterval(()=>{if(!document.hidden)syncEmails(false)},180000);setTimeout(()=>syncEmails(false),4000)}
+}
+$("#autoSync").addEventListener("change",e=>{try{localStorage.setItem("csdAutoOn",e.target.checked?"1":"0");if(e.target.checked)localStorage.setItem("csdAuto","1")}catch(_){};setupAuto()});
+/* cập nhật ticket theo đơn */
+async function applyOrderToTickets(o){
+  let n=0;
+  for(const t of tickets.filter(t=>t.orderName===o.orderName&&(!t.client||t.client===o.client))){
+    const x=clean(t);const notes=[];
+    if(!x.client){x.client=o.client;notes.push("client")}
+    for(const k of ["tracking","trackingUrl","carrier","customerEmail","country","orderId"])if(o[k]&&x[k]!==o[k]){x[k]=o[k];if(k==="tracking")notes.push("tracking "+o[k])}
+    if(!x.customerName&&o.customerName)x.customerName=o.customerName;
+    if(o.shipStatus&&x.shipStatus!==o.shipStatus){x.shipStatus=o.shipStatus;notes.push("giao hàng: "+lab(SHIP,o.shipStatus)[1])}
+    if(JSON.stringify(x)!==JSON.stringify(t)){if(notes.length)addLog(x,"system","Shopify Flow cập nhật "+notes.join(", "));await saveTicket(x);n++}
+  }
+  return n;
+}
+/* xoá đơn cũ không có ticket để giữ dữ liệu gọn */
+async function purgeOld(){
+  const days=Number(settings.retentionDays)||90,cut=new Date(Date.now()-days*864e5).toISOString();
+  const old=orders.filter(o=>(o.orderDate||o.updatedAt||"")<cut&&!ticketFor(o)).slice(0,200);
+  for(const o of old)await db.collection("orders").doc(orderDocId(o.client,o.orderName)).delete().catch(()=>{});
+}
+async function syncTracking(){
+  let list=tickets.filter(t=>selected.has(t.id));
+  if(!list.length)list=tickets.filter(t=>isActive(t)&&!t.tracking&&inClient(t));
+  list=list.filter(t=>t.orderName);let upd=0;
+  for(const t of list){const o=orders.find(o=>o.orderName===t.orderName&&(!t.client||o.client===t.client));if(o)upd+=await applyOrderToTickets(o)}
+  toast(list.length?`Đã cập nhật ${upd}/${list.length} ticket từ dữ liệu đơn`+(upd<list.length?" — đơn chưa có tracking thì chưa cập nhật":""):"Không có ticket nào cần lấy tracking");
+}
+function parseCSV(text){
+  const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+const norm=s=>s.toLowerCase().replace(/[^a-z]/g,"");
+const HMAP={orderName:["ordernumber","ordername","name","order"],orderId:["orderid","id"],tracking:["trackingnumber","tracking","trackingno"],customerEmail:["customeremail","email"],
+  customerName:["customername","customer","shippingname"],supplier:["suppliers","supplier"],carrier:["shippingcarrier","carrier"],country:["shippingcountry","country"],
+  orderDate:["dateorder","createdat","orderdate","date"],statusOrder:["statusorder","status"],total:["total","totalprice"]};
+$("#csvFile").addEventListener("change",async e=>{
+  const file=e.target.files[0];if(!file)return;
+  const client=$("#csvClient").value;
+  if(!client){$("#csvMsg").textContent="Chọn client của file trước.";e.target.value="";return}
+  const rows=parseCSV(await file.text());if(rows.length<2){$("#csvMsg").textContent="File trống";return}
+  const head=rows[0].map(norm),idx={};
+  for(const [k,alts] of Object.entries(HMAP)){for(const a of alts){const i=head.indexOf(a);if(i>=0){idx[k]=i;break}}}
+  if(idx.orderName==null&&idx.orderId==null){$("#csvMsg").textContent="Không tìm thấy cột mã đơn (Order Number / OrderID)";return}
+  let nOrd=0,nTk=0;$("#csvMsg").textContent="Đang nhập…";
+  for(const r of rows.slice(1)){
+    const g=k=>idx[k]!=null?(r[idx[k]]||"").trim():"";
+    let name=g("orderName")||g("orderId");if(!name)continue;
+    const prev=orders.find(o=>o.client===client&&(o.orderName===name||o.orderName==="#"+name));if(prev)name=prev.orderName;
+    const st=g("statusOrder").toLowerCase();
+    const o={...(prev||{}),client,orderName:name};
+    for(const k of ["orderId","tracking","customerEmail","customerName","supplier","carrier","country","orderDate","total"])if(g(k)&&!o[k]||k==="supplier"&&g(k))o[k]=g(k)||o[k];
+    const ship=st.includes("undeliver")?"undelivered":st.includes("deliver")?"delivered":st.includes("transit")?"transit":"";
+    if(ship&&!o.shipRaw)o.shipStatus=ship;
+    o.updatedAt=now();o.source=o.source||"csv";
+    await db.collection("orders").doc(orderDocId(client,name)).set(clean(o));nOrd++;
+    if($("#csvUpdate").checked)nTk+=await applyOrderToTickets(o);
+  }
+  $("#csvMsg").textContent=`Đã nhập ${nOrd} đơn cho ${clientName(client)}`+(nTk?` · cập nhật ${nTk} ticket`:"");
+  e.target.value="";
+});
+function ticketFor(o){return tickets.find(t=>t.orderName===o.orderName&&(!t.client||t.client===o.client))}
+const oNorm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/đ/g,"d");
+function filteredOrders(){
+  const terms=oNorm($("#oSearch").value).split(/[,;\n]+/).map(s=>s.trim().replace(/^#/,"")).filter(Boolean);
+  const ft=$("#oFTicket").value,fr=$("#oFTrack").value,ff=$("#oFFin").value,fs=$("#oFShip").value,df=$("#oFrom").value,dt=$("#oTo").value;
+  return orders.filter(o=>{
+    if(!inClient(o))return false;
+    const d=(o.orderDate||"").slice(0,10);if(df&&d<df||dt&&d>dt)return false;
+    if(ft){const t=!!ticketFor(o);if(ft==="has"&&!t||ft==="none"&&t)return false}
+    if(fr==="yes"&&!o.tracking||fr==="no"&&o.tracking)return false;
+    if(ff&&o.financial!==ff)return false;
+    if(fs&&(fs==="__none"?o.shipStatus:o.shipStatus!==fs))return false;
+    if(terms.length){const hay=oNorm([o.orderName,o.orderId,o.customerName,o.customerEmail,o.tracking,o.carrier,o.supplier,o.country].join(" "));if(!terms.some(q=>hay.includes(q)))return false}
+    return true;
+  }).sort((a,b)=>(b.orderDate||"").localeCompare(a.orderDate||""));
+}
+let oLimit=300;
+function renderOrders(){
+  const pool=orders.filter(inClient);
+  const fin=[...new Set(pool.map(o=>o.financial).filter(Boolean))].sort(),fsel=$("#oFFin"),fv=fsel.value;
+  fsel.innerHTML='<option value="">Mọi thanh toán</option>'+fin.map(f=>`<option value="${esc(f)}">${esc(f)}</option>`).join("");fsel.value=fin.includes(fv)?fv:"";
+  const shs=$("#oFShip"),sv=shs.value;shs.innerHTML='<option value="">Mọi trạng thái giao</option><option value="__none">Chưa có cập nhật</option>'+SHIP.filter(x=>x[0]).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("");shs.value=sv;
+  const list=filteredOrders(),isF=list.length!==pool.length;
+  $("#oCount").textContent=isF?`${list.length} / ${pool.length} đơn`:pool.length+" đơn";$("#oEmpty").style.display=pool.length?"none":"";
+  const shown=list.slice(0,oLimit);
+  $("#oSelAll").checked=shown.length&&shown.filter(o=>!ticketFor(o)).every(o=>oSelected.has(orderKey(o)))&&shown.some(o=>!ticketFor(o));
+  if(pool.length&&!list.length){$("#oBody").innerHTML=`<tr style="cursor:default"><td colspan="10" class="empty">Không có đơn nào khớp bộ lọc.</td></tr>`;$("#btnBulkCreate").disabled=!oSelected.size;return}
+  $("#oBody").innerHTML=shown.map(o=>{const t=ticketFor(o),k=orderKey(o);return `<tr data-ok="${esc(k)}">
+    <td onclick="event.stopPropagation()"><input type="checkbox" class="oSel" data-ok="${esc(k)}" ${oSelected.has(k)?"checked":""} ${t?"disabled":""}></td>
+    <td style="font-size:12.5px">${esc(clientName(o.client))}</td>
+    <td><strong>${esc(o.orderName)}</strong></td><td class="muted">${fmtD(o.orderDate)}</td><td>${esc(o.customerName)}<div class="muted" style="font-size:12px">${esc(o.customerEmail)}</div></td>
+    <td>${o.financial?`<span class="pill ${o.financial==="PAID"?"s-done":o.financial.includes("REFUND")?"s-bad":"s-wait"}">${esc(o.financial)}</span>`:""}</td>
+    <td>${o.fulfillment?`<span class="pill ${o.fulfillment==="FULFILLED"?"s-done":"s-open"}">${esc(o.fulfillment)}</span>`:""}</td>
+    <td>${o.shipStatus?`<span class="pill ${lab(SHIP,o.shipStatus)[2]}" title="${esc(o.shipRaw||"")}${o.shipAt?" · "+fmtDT(o.shipAt):""}">${lab(SHIP,o.shipStatus)[1]}</span>`:'<span class="muted">—</span>'}</td>
+    <td class="mono">${o.tracking?o.tracking.split(/,\s*/).map(n=>`<a href="${track17([n])}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${esc(n)}</a>`).join("<br>"):`<span class="muted" style="font-family:inherit">${o.fulfillment&&o.fulfillment!=="FULFILLED"?"Chưa fulfill":"—"}</span>`}</td>
+    <td>${t?`<a href="#tickets" data-open="${t.id}">${lab(STATUSES,t.status)[1]}</a>`:`<button class="btn sm" data-create="${esc(k)}">Tạo ticket</button>`}</td></tr>`}).join("")+
+    (list.length>shown.length?`<tr style="cursor:default"><td colspan="10" class="empty">Đang hiện ${shown.length}/${list.length} đơn. <button class="btn sm" id="oMore">Hiện thêm</button></td></tr>`:"");
+  $("#btnBulkCreate").disabled=!oSelected.size;
+}
+$("#oBody").addEventListener("change",e=>{if(e.target.classList.contains("oSel")){e.target.checked?oSelected.add(e.target.dataset.ok):oSelected.delete(e.target.dataset.ok);$("#btnBulkCreate").disabled=!oSelected.size}});
+["#oSearch","#oFTicket","#oFTrack","#oFFin","#oFShip","#oFrom","#oTo"].forEach(s=>$(s).addEventListener("input",()=>{oLimit=300;renderOrders()}));
+$("#oSearch").addEventListener("keydown",e=>{if(e.key==="Escape"){e.target.value="";renderOrders()}});
+$("#oSelAll").addEventListener("change",e=>{filteredOrders().slice(0,oLimit).forEach(o=>{if(!ticketFor(o))e.target.checked?oSelected.add(orderKey(o)):oSelected.delete(orderKey(o))});renderOrders()});
+async function createFromOrder(o,type){const t=newTicket({...o,type});await saveTicket(t);return t}
+$("#oBody").addEventListener("click",async e=>{
+  if(e.target.closest("#oMore")){oLimit+=300;renderOrders();return}
+  const c=e.target.closest("[data-create]");const op=e.target.closest("[data-open]");
+  if(c){const o=orders.find(x=>orderKey(x)===c.dataset.create);if(!o)return;c.disabled=true;const t=await createFromOrder(o,$("#bulkType").value);toast("Đã tạo ticket "+o.orderName);location.hash="#tickets";setTimeout(()=>openTicket(t.id,t),50)}
+  if(op){setTimeout(()=>openTicket(op.dataset.open),50)}
+});
+$("#btnBulkCreate").addEventListener("click",async()=>{
+  const ty=$("#bulkType").value;let n=0;$("#btnBulkCreate").disabled=true;
+  for(const k of oSelected){const o=orders.find(x=>orderKey(x)===k);if(o&&!ticketFor(o)){await createFromOrder(o,ty);n++}}
+  oSelected.clear();toast(`Đã tạo ${n} ticket`);renderOrders();
+});
+
+/* ---------- REPORTS ---------- */
+function rangeInit(days){const t=new Date(),f=new Date();if(days==="month")f.setDate(1);else f.setDate(t.getDate()-days+1);$("#rFrom").value=f.toISOString().slice(0,10);$("#rTo").value=t.toISOString().slice(0,10)}
+document.querySelectorAll("[data-range]").forEach(b=>b.addEventListener("click",()=>{rangeInit(b.dataset.range==="month"?"month":Number(b.dataset.range));renderReports()}));
+["#rFrom","#rTo","#rAgent"].forEach(s=>$(s).addEventListener("change",renderReports));
+function repSet(){
+  const f=$("#rFrom").value,t=$("#rTo").value,a=$("#rAgent").value;
+  return tickets.filter(x=>{const d=(x.createdAt||"").slice(0,10);return inClient(x)&&(!f||d>=f)&&(!t||d<=t)&&(!a||x.assignee===a)});
+}
+function stats(set){
+  const avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;
+  const responded=set.filter(t=>t.firstResponseAt),resolved=set.filter(t=>t.resolvedAt);
+  const frt=responded.map(t=>hrs(t.createdAt,t.firstResponseAt)),res=resolved.map(t=>hrs(t.createdAt,t.resolvedAt));
+  const frtOk=responded.filter(t=>hrs(t.createdAt,t.firstResponseAt)<=slaFor(t).frt).length,resOk=resolved.filter(t=>hrs(t.createdAt,t.resolvedAt)<=slaFor(t).res).length;
+  const csat=set.filter(t=>t.csat>0).map(t=>t.csat);
+  const qa=set.filter(t=>t.qa&&Object.keys(t.qa).length).map(t=>QA.filter(q=>t.qa[q[0]]).length/5*100);
+  return {total:set.length,open:set.filter(isActive).length,resolved:resolved.length,
+    frt:avg(frt),res:avg(res),frtSla:frt.length?frtOk/frt.length*100:null,
+    resSla:res.length?resOk/res.length*100:null,
+    csat:avg(csat),csatN:csat.length,csatPos:csat.length?csat.filter(v=>v>=4).length/csat.length*100:null,qa:avg(qa),qaN:qa.length,
+    refund:set.reduce((s,t)=>s+(Number(t.refundAmount)||0),0),disputes:set.filter(t=>t.dispute!=="none").length,
+    won:set.filter(t=>t.dispute==="won").length,lost:set.filter(t=>t.dispute==="lost").length,overdue:set.filter(t=>slaState(t).overdue).length};
+}
+const pct=v=>v==null?"–":Math.round(v)+"%";
+function hbars(el,pairs){const max=Math.max(1,...pairs.map(p=>p[1]));el.innerHTML=pairs.length?pairs.map(([l,v])=>`<div class="hbar"><span title="${esc(l)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l)}</span><div class="track"><div class="fill" style="width:${v/max*100}%"></div></div><b>${v}</b></div>`).join(""):'<div class="muted">Chưa có dữ liệu</div>'}
+function countBy(set,fn){const m=new Map();set.forEach(t=>{const k=fn(t);if(k)m.set(k,(m.get(k)||0)+1)});return [...m.entries()].sort((a,b)=>b[1]-a[1])}
+function renderReports(){
+  agentOptions($("#rAgent"),'<option value="">Toàn đội</option>');
+  const set=repSet(),s=stats(set),cur=settings.currency;
+  const K=[["Tổng ticket",s.total,`${s.open} đang mở · ${s.overdue} quá SLA`],["Đã giải quyết",s.resolved,s.total?pct(s.resolved/s.total*100)+" tổng số":""],
+    ["TG phản hồi đầu TB",fmtH(s.frt),`Đúng SLA: ${pct(s.frtSla)}`],["TG giải quyết TB",fmtH(s.res),`Đúng SLA: ${pct(s.resSla)}`],
+    ["CSAT trung bình",s.csat==null?"–":s.csat.toFixed(2)+"/5",`${s.csatN} đánh giá · ${pct(s.csatPos)} hài lòng (4–5★)`],["Điểm QA nội bộ",pct(s.qa),`${s.qaN} ticket đã chấm`],
+    ["Tiền hoàn",money(s.refund)+" "+cur,""],["Tranh chấp",s.disputes,`Thắng ${s.won} · Thua ${s.lost}`]];
+  $("#kpis").innerHTML=K.map(k=>`<div class="panel kpi"><div class="l">${k[0]}</div><div class="v">${k[1]}</div><div class="h">${k[2]}</div></div>`).join("");
+  // per day
+  const f=$("#rFrom").value,t=$("#rTo").value;const days=[];
+  if(f&&t){for(let d=new Date(f);d<=new Date(t)&&days.length<120;d.setDate(d.getDate()+1))days.push(d.toISOString().slice(0,10))}
+  const byDay=new Map();set.forEach(x=>{const d=x.createdAt.slice(0,10);byDay.set(d,(byDay.get(d)||0)+1)});
+  const mx=Math.max(1,...days.map(d=>byDay.get(d)||0));
+  $("#chDays").innerHTML=days.map(d=>{const v=byDay.get(d)||0;return `<div class="c" title="${fmtD(d)}: ${v} ticket" style="height:${v/mx*100}%">${v&&days.length<=31?`<span>${v}</span>`:""}</div>`}).join("");
+  $("#chDaysAx").innerHTML=days.length?`<span>${fmtD(days[0])}</span><span>${fmtD(days[days.length-1])}</span>`:"";
+  hbars($("#chType"),countBy(set,x=>x.type));
+  hbars($("#chRes"),countBy(set,x=>x.resolution));
+  hbars($("#chChan"),countBy(set,x=>lab(CHANNELS,x.channel||"email")[1]));
+  hbars($("#chSent"),countBy(set,x=>x.summary?.sentiment?lab(SENT,x.summary.sentiment)[1]:""));
+  hbars($("#chShip"),countBy(set,x=>lab(SHIP,x.shipStatus)[1]));
+  hbars($("#chDisp"),countBy(set.filter(x=>x.dispute!=="none"),x=>lab(DISPUTE,x.dispute)[1]+(x.disputeReason?" · "+x.disputeReason:"")));
+  // agents
+  const agents=[...new Set(set.map(x=>x.assignee||""))];
+  const rows=agents.map(a=>[a,stats(set.filter(x=>(x.assignee||"")===a))]).sort((x,y)=>y[1].total-x[1].total);
+  $("#agentTable").innerHTML=`<thead><tr><th>Nhân viên</th><th>Ticket</th><th>Đã giải quyết</th><th>Quá SLA (đang mở)</th><th>Phản hồi đầu TB</th><th>Đúng SLA phản hồi</th><th>Giải quyết TB</th><th>Đúng SLA giải quyết</th><th>CSAT</th><th>QA</th><th>Tiền hoàn</th></tr></thead><tbody>`+
+    (rows.length?rows.map(([a,s])=>`<tr style="cursor:default"><td><b>${esc(nameOf(a)||"Chưa phân công")}</b></td><td>${s.total}</td><td>${s.resolved}</td><td>${s.overdue}</td><td>${fmtH(s.frt)}</td><td>${pct(s.frtSla)}</td><td>${fmtH(s.res)}</td><td>${pct(s.resSla)}</td><td>${s.csat==null?"–":s.csat.toFixed(2)}</td><td>${pct(s.qa)}</td><td>${money(s.refund)}</td></tr>`).join(""):'<tr><td colspan="11" class="empty">Chưa có dữ liệu</td></tr>')+"</tbody>";
+}
+
+/* ---------- EXPORT ---------- */
+const csvCell=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+const toCSV=rows=>"﻿"+rows.map(r=>r.map(csvCell).join(",")).join("\n");
+async function saveFile(filename,data){
+  if(downloads){try{await downloads.save({filename,data});return}catch(e){if(e?.code==="declined"||e?.code==="user_declined")return}}
+  $("#copyArea").value=data;$("#mCopy").classList.add("on");
+}
+$("#copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText($("#copyArea").value);toast("Đã sao chép")}catch(e){$("#copyArea").select();toast("Nhấn Ctrl/Cmd+C để sao chép")}};
+$("#copyClose").onclick=()=>$("#mCopy").classList.remove("on");
+$("#btnExport").addEventListener("click",()=>{
+  const set=filtered();
+  const head=["Client","Mã đơn","Ngày đặt","Khách hàng","Email","Giá trị","Quốc gia","Loại vấn đề","Ưu tiên","Trạng thái","Giao hàng","Tracking","Carrier","Supplier","Tranh chấp","Lý do tranh chấp","Phụ trách","Tạo lúc","Phản hồi đầu lúc","Giải quyết lúc","TG phản hồi (giờ)","TG giải quyết (giờ)","Cách giải quyết","Tiền hoàn","CSAT","QA (/5)","Quá SLA","Kênh","Thái độ KH","Tóm tắt vấn đề","CS đã làm","Bước tiếp theo"];
+  const rows=set.map(t=>{const s=slaState(t);return [clientName(t.client),t.orderName,(t.orderDate||"").slice(0,10),t.customerName,t.customerEmail,t.total,t.country,t.type,lab(PRIORITY,t.priority)[1],lab(STATUSES,t.status)[1],lab(SHIP,t.shipStatus)[1],t.tracking,t.carrier,t.supplier,lab(DISPUTE,t.dispute)[1],t.disputeReason,nameOf(t.assignee),t.createdAt,t.firstResponseAt,t.resolvedAt,
+    t.firstResponseAt?s.frtH.toFixed(2):"",t.resolvedAt?s.resH.toFixed(2):"",t.resolution,t.refundAmount||0,t.csat||"",QA.filter(q=>t.qa?.[q[0]]).length,s.overdue?"Có":"",lab(CHANNELS,t.channel||"email")[1],t.summary?.sentiment?lab(SENT,t.summary.sentiment)[1]:"",t.summary?.issue||"",t.summary?.done||"",t.summary?.next||""]});
+  saveFile(`tickets_${new Date().toISOString().slice(0,10)}.csv`,toCSV([head,...rows]));
+});
+$("#btnRepExport").addEventListener("click",()=>{
+  const set=repSet();const agents=[...new Set(set.map(x=>x.assignee||""))];
+  const head=["Nhân viên","Ticket","Đã giải quyết","Quá SLA","Phản hồi đầu TB (giờ)","% đúng SLA phản hồi","Giải quyết TB (giờ)","% đúng SLA giải quyết","CSAT TB","Số CSAT","QA TB (%)","Tiền hoàn","Tranh chấp","Thắng","Thua"];
+  const line=(n,s)=>[n,s.total,s.resolved,s.overdue,s.frt?.toFixed(2)??"",s.frtSla?.toFixed(0)??"",s.res?.toFixed(2)??"",s.resSla?.toFixed(0)??"",s.csat?.toFixed(2)??"",s.csatN,s.qa?.toFixed(0)??"",s.refund.toFixed(2),s.disputes,s.won,s.lost];
+  const rows=[["Kỳ báo cáo",$("#rFrom").value+" → "+$("#rTo").value],["Client",curClient?clientName(curClient):"Tất cả"],[],head,line("TOÀN ĐỘI",stats(set)),...agents.map(a=>line(nameOf(a)||"Chưa phân công",stats(set.filter(x=>(x.assignee||"")===a))))];
+  saveFile(`bao-cao-cs_${$("#rFrom").value}_${$("#rTo").value}.csv`,toCSV(rows));
+});
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  const ae=document.activeElement;if(ae&&$("#v-settings").contains(ae)&&ae.tagName==="INPUT")return;
+  $("#setFrt").value=settings.frtHours;$("#setRes").value=settings.resHours;$("#setCur").value=settings.currency;
+  $("#setLookback").value=settings.lookbackDays||14;$("#setRetention").value=settings.retentionDays||90;
+  const keys=Object.keys(clients).sort((a,b)=>clientName(a).localeCompare(clientName(b)));
+  $("#clBody").innerHTML=keys.length?keys.map(k=>{const c=clients[k];return `<tr data-cl="${esc(k)}" style="cursor:default">
+    <td><input type="text" data-k="name" value="${esc(c.name||"")}" style="width:100%"></td><td class="muted mono">${esc(k)}</td>
+    <td><input type="number" data-k="frtHours" value="${esc(c.frtHours||"")}" placeholder="${settings.frtHours}" style="width:90px"></td>
+    <td><input type="number" data-k="resHours" value="${esc(c.resHours||"")}" placeholder="${settings.resHours}" style="width:90px"></td>
+    <td>${orders.filter(o=>o.client===k).length}</td><td>${tickets.filter(t=>t.client===k&&isActive(t)).length}</td><td class="muted">${fmtDT(c.lastEmailAt)}</td></tr>`}).join(""):'<tr><td colspan="7" class="empty">Chưa có client. Client xuất hiện sau lần đồng bộ email đầu tiên.</td></tr>';
+  $("#usageMsg").textContent=`Đang lưu ${tickets.length} ticket, ${orders.length} đơn, ${keys.length} client (giới hạn khoảng 25.000 bản ghi).`;
+}
+async function saveSettings(patch){
+  settings={...settings,...patch};
+  if(db){try{await db.doc("config/settings").set(settings);toast("Đã lưu cài đặt")}catch(e){toast("Không lưu được — cần quyền chỉnh sửa")}}
+  renderAll();
+}
+$("#btnSaveSet").addEventListener("click",()=>saveSettings({frtHours:Number($("#setFrt").value)||24,resHours:Number($("#setRes").value)||72,currency:$("#setCur").value.trim()||"USD"}));
+$("#btnSaveSync").addEventListener("click",()=>saveSettings({lookbackDays:Math.min(60,Number($("#setLookback").value)||14),retentionDays:Math.max(30,Number($("#setRetention").value)||90)}));
+$("#btnSaveClients").addEventListener("click",async()=>{
+  for(const tr of document.querySelectorAll("#clBody tr[data-cl]")){
+    const k=tr.dataset.cl,c={...clients[k]};
+    tr.querySelectorAll("input[data-k]").forEach(i=>{const v=i.value.trim();c[i.dataset.k]=i.type==="number"?(v?Number(v):""):v});
+    if(!c.name)c.name=k.replace(/\.myshopify\.com$/,"");
+    if(JSON.stringify(c)!==JSON.stringify(clients[k])){clients[k]=c;if(db)await db.collection("clients").doc(safeId(k)).set(clean(c)).catch(()=>toast("Không lưu được client"))}
+  }
+  toast("Đã lưu client");renderAll();
+});
+$("#btnBackup").addEventListener("click",()=>{
+  const data=JSON.stringify({exportedAt:now(),settings,clients,tickets,orders},null,1);
+  saveFile(`cs-ticket-backup_${new Date().toISOString().slice(0,10)}.json`,data);
+});
+
+function renderAll(){
+  renderClientSelects();
+  if(view==="tickets")renderTickets();else renderTabs();
+  if(view==="orders")renderOrders();
+  if(view==="reports")renderReports();
+  if(view==="settings")renderSettings();
+  if(openId){const t=tickets.find(x=>x.id===openId);if(t){const ae=document.activeElement;if(!(ae&&$("#dr").contains(ae)&&(ae.tagName==="TEXTAREA"||ae.type==="text"||ae.type==="number")))renderDrawer(t)}}
+}
+
+/* ---------- boot ---------- */
+fillSelects();rangeInit(30);route();
+(async()=>{
+  const w=window.claude;
+  if(!w||!w.use){$("#dbNotice").style.display="";$("#dbNotice").textContent="Đang chạy ở chế độ thử: dữ liệu chỉ nằm trong trang này và sẽ mất khi tải lại. Mở trang trên claude.ai để lưu cho cả đội.";$("#whoami").textContent="Chế độ thử";return}
+  [user,mcp,downloads,sample]=await Promise.all([w.use("user"),w.use("mcp"),w.use("downloads"),w.use("sample")]);
+  if(user){try{meId=await user.id();const me=await user.me();names[meId]=me?.name||"Tôi";$("#whoami").textContent="Đăng nhập: "+names[meId]}catch(e){}}
+  db=await w.use("db");
+  if(!db){$("#dbNotice").style.display="";$("#dbNotice").textContent="Không kết nối được bộ lưu trữ — thay đổi sẽ không được lưu. Hãy đăng nhập claude.ai rồi tải lại trang.";return}
+  const timer=setTimeout(()=>{$("#dbNotice").style.display="";$("#dbNotice").textContent="Tải dữ liệu chậm hơn bình thường…"},10000);
+  const docsOf=snap=>(Array.isArray(snap)?snap:(snap.docs||[])).map(d=>{const v=typeof d.data==="function"?d.data():(d.data||d);return {...v,_id:d.id}});
+  db.collection("tickets").onSnapshot(snap=>{
+    clearTimeout(timer);$("#dbNotice").style.display="none";
+    tickets=docsOf(snap).map(v=>{const x={...v,id:v._id||v.id};delete x._id;return x});
+    renderAll();resolveNames();
+  },err=>{clearTimeout(timer);$("#dbNotice").style.display="";$("#dbNotice").textContent="Lỗi tải ticket: "+(err?.message||err?.code||"")});
+  db.collection("orders").onSnapshot(snap=>{orders=docsOf(snap).map(v=>{const x={...v};delete x._id;return x});if(view==="orders"||view==="settings")renderAll()},()=>{});
+  db.collection("clients").onSnapshot(snap=>{clients={};for(const v of docsOf(snap)){if(v.shop){const x={...v};delete x._id;clients[v.shop]=x}}renderAll()},()=>{});
+  db.doc("config/settings").onSnapshot(d=>{const v=d&&(typeof d.data==="function"?d.data():d.data);if(v&&v.frtHours){settings={...settings,...v};renderAll()}},()=>{});
+  db.doc("sync/gmail").onSnapshot(d=>{const v=d&&(typeof d.data==="function"?d.data():d.data);if(v){syncState=v;renderSyncMsg()}},()=>{});
+  if(!mcp){$("#btnSync").disabled=true;$("#syncMsg").textContent="Chế độ xem này không đồng bộ được email. Dữ liệu đã đồng bộ vẫn hiển thị đầy đủ."}
+  else setupAuto();
+  renderAll();
+})();
+</script>
+</body>
+</html>
