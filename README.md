@@ -24,17 +24,22 @@ src/
 supabase/migrations/   database schema + row-level security
 ```
 
+## Two modes
+
+- **Browser-only (default, no setup):** with no env vars, there is no login and data is saved in each browser's localStorage. Nothing is shared between people or devices; use Settings → "Tải bản sao lưu" to keep a copy.
+- **Team mode (Supabase):** set the two Supabase variables to get login, a shared database and live updates.
+
 ## Setup
 
 Requires Node.js 20+.
 
-1. **Install**
+1. **Install and run** (browser-only mode works right away)
    ```bash
    npm install
-   cp .env.example .env.local
+   npm run dev       # http://localhost:3000
    ```
 
-2. **Supabase**
+2. **Supabase** (optional, for team mode)
    - Create a project at [supabase.com](https://supabase.com).
    - In the SQL editor, run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
    - Add your team's emails (only these can see data):
@@ -42,18 +47,13 @@ Requires Node.js 20+.
      insert into public.team_members (email) values ('you@example.com'), ('teammate@example.com');
      ```
    - Authentication → URL Configuration: set Site URL to your app URL and add `http://localhost:3000/auth/callback` (and your production `/auth/callback`) to Redirect URLs.
-   - Copy the project URL and anon key into `.env.local`.
-
-3. **Run**
-   ```bash
-   npm run dev       # http://localhost:3000
-   npm run typecheck
-   npm run build
-   ```
+   - Copy the project URL and anon key into `.env` (see `.env.example`).
 
 ## Deploy to Vercel
 
-Import the repo in Vercel, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` under Settings → Environment Variables, and deploy. Then add `https://<your-app>.vercel.app/auth/callback` to Supabase's Redirect URLs.
+Import the repo in Vercel and deploy — no environment variables needed for browser-only mode.
+
+To switch to team mode later, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` under Settings → Environment Variables, redeploy, and add `https://<your-app>.vercel.app/auth/callback` to Supabase's Redirect URLs. Data saved in browser-only mode is not moved automatically.
 
 ## Optional features
 

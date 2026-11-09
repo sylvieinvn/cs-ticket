@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
+import { SUPABASE_ENABLED } from "@/lib/config";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const router = useRouter();
+  // Browser-only mode has no accounts.
+  useEffect(() => {
+    if (!SUPABASE_ENABLED) router.replace("/tickets");
+  }, [router]);
+
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);

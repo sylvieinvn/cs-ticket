@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_ENABLED } from "@/lib/config";
 import { GmailError } from "@/lib/server/gmail";
 import { syncEmails } from "@/lib/server/sync";
 import { getAdminSupabase, requireTeamMember } from "@/lib/supabase/server";
@@ -12,7 +13,7 @@ export const maxDuration = 60;
  */
 export async function POST(request: NextRequest) {
   const env = process.env;
-  if (!env.SUPABASE_SERVICE_ROLE_KEY || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
+  if (!SUPABASE_ENABLED || !env.SUPABASE_SERVICE_ROLE_KEY || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
     return NextResponse.json({ error: "Đồng bộ Gmail chưa được bật. Dùng Nhập file CSV trong lúc này." }, { status: 501 });
   }
 

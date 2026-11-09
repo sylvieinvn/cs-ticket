@@ -12,7 +12,10 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { SUPABASE_ENABLED } from "@/lib/config";
 import { now } from "@/lib/format";
+import { LOCAL_KEY, loadLocal, saveLocal } from "@/lib/localStore";
 import { applyOrderToTicket, clientDocId, orderDocId, shopShortName } from "@/lib/orders";
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { fetchAllDocs, upsertDocs, type DocRow } from "@/lib/supabase/docs";
@@ -27,6 +30,8 @@ interface Me {
 }
 
 interface DataContext {
+  /** "local": browser-only, data in localStorage. "cloud": Supabase. */
+  mode: "local" | "cloud";
   ready: boolean;
   loadError: string;
   me: Me | null;
@@ -87,9 +92,11 @@ function applyChange<T>(set: Dispatch<SetStateAction<ById<T>>>, p: ChangePayload
 }
 
 const CLIENT_KEY = "csdClient";
+const LOCAL_USER_ID = "local";
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const sb = getBrowserSupabase();
+  // null in browser-only mode.
+  const sb: SupabaseClient | null = useMemo(() => (SUPABASE_ENABLED ? getBrowserSupabase() : null), []);
   const { toast } = useUi();
 
   const [ready, setReady] = useState(false);
@@ -121,8 +128,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (id === "sync_gmail") setSyncState((data as SyncState) ?? {});
   }, []);
 
-  // Initial load + live updates.
+  /* ---------- browser-only mode: load from / save to localStorage ---------- */
+
+  const loadFromBrowser = useCallback(() => {
+    const s = loadLocal();
+    const name = s.myName || "Tôi";
+    setMe({ id: LOCAL_USER_ID, email: "", name });
+    setNames({ [LOCAL_USER_ID]: name });
+    setTicketsById(s.tickets);
+    setOrdersById(s.orders);
+    setClientsById(s.clients);
+    setSettings({ ...DEFAULT_SETTINGS, ...(s.settings ?? {}) });
+  }, []);
+
   useEffect(() => {
+    if (sb) return;
+    loadFromBrowser();
+    setReady(true);
+    // Another tab saved: reload so tabs don't overwrite each other.
+    const onStorage = (e: StorageEvent) => e.key === LOCAL_KEY && loadFromBrowser();
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [sb, loadFromBrowser]);
+
+  const warnedFull = useRef(false);
+  useEffect(() => {
+    if (sb || !ready) return;
+    const ok = saveLocal({
+      tickets: ticketsById,
+      orders: ordersById,
+      clients: clientsById,
+      settings,
+      myName: me?.name,
+    });
+    if (!ok && !warnedFull.current) {
+      warnedFull.current = true;
+      toast("Trình duyệt không lưu được dữ liệu (bộ nhớ đầy hoặc bị chặn). Hãy tải bản sao lưu.");
+    }
+  }, [sb, ready, ticketsById, ordersById, clientsById, settings, me, toast]);
+
+  /* ---------- cloud mode: initial load + live updates from Supabase ---------- */
+
+  useEffect(() => {
+    if (!sb) return;
     let cancelled = false;
     const slow = setTimeout(() => !cancelled && setLoadError("Tải dữ liệu chậm hơn bình thường…"), 10_000);
 
@@ -191,6 +239,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
   }, [sb, applyConfig]);
 
+  /* ---------- derived data ---------- */
+
   const tickets = useMemo(() => Object.values(ticketsById), [ticketsById]);
   const orders = useMemo(() => Object.values(ordersById), [ordersById]);
   const clients = useMemo(() => {
@@ -220,11 +270,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   ticketsRef.current = ticketsById;
   const getTicket = useCallback((id: string) => ticketsRef.current[id], []);
 
+  /* ---------- writes (state first; Supabase too when enabled) ---------- */
+
   const saveTicket = useCallback(
     async (t: Ticket) => {
       const x = { ...t, updatedAt: now() };
       ticketsRef.current = { ...ticketsRef.current, [x.id]: x };
       setTicketsById((prev) => ({ ...prev, [x.id]: x }));
+      if (!sb) return;
       try {
         await upsertDocs(sb, "tickets", [{ id: x.id, data: x }]);
       } catch (e) {
@@ -241,6 +294,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         delete next[id];
         return next;
       });
+      if (!sb) return;
       const { error } = await sb.from("tickets").delete().eq("id", id);
       if (error) toast("Không xoá được");
     },
@@ -251,7 +305,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async (list: Order[]) => {
       const rows = list.map((o) => ({ id: orderDocId(o.client, o.orderName), data: o }));
       setOrdersById((prev) => ({ ...prev, ...toById(rows) }));
-      await upsertDocs(sb, "orders", rows);
+      if (sb) await upsertDocs(sb, "orders", rows);
     },
     [sb],
   );
@@ -260,8 +314,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async (list: Client[]) => {
       const rows = list.map((c) => ({ id: clientDocId(c.shop), data: c }));
       setClientsById((prev) => ({ ...prev, ...toById(rows) }));
+      if (!sb) return toast("Đã lưu client");
       try {
         await upsertDocs(sb, "clients", rows);
+        toast("Đã lưu client");
       } catch {
         toast("Không lưu được client");
       }
@@ -273,6 +329,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     async (patch: Partial<Settings>) => {
       const next = { ...settings, ...patch };
       setSettings(next);
+      if (!sb) return toast("Đã lưu cài đặt");
       const { error } = await sb.from("app_config").upsert({ id: "settings", data: next, updated_at: now() });
       toast(error ? "Không lưu được cài đặt" : "Đã lưu cài đặt");
     },
@@ -282,8 +339,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const saveMyName = useCallback(
     async (name: string) => {
       if (!me) return;
-      const { error } = await sb.from("profiles").upsert({ id: me.id, name, updated_at: now() });
-      if (error) return toast("Không lưu được tên");
+      if (sb) {
+        const { error } = await sb.from("profiles").upsert({ id: me.id, name, updated_at: now() });
+        if (error) return toast("Không lưu được tên");
+      }
       setMe({ ...me, name });
       setNames((n) => ({ ...n, [me.id]: name }));
       toast("Đã lưu tên hiển thị");
@@ -309,6 +368,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   );
 
   const value: DataContext = {
+    mode: sb ? "cloud" : "local",
     ready,
     loadError,
     me,

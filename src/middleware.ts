@@ -1,8 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_ENABLED } from "@/lib/config";
 
 /** Refreshes the Supabase session cookie and sends signed-out visitors to /login. */
 export async function middleware(request: NextRequest) {
+  // Browser-only mode: no accounts, nothing to check.
+  if (!SUPABASE_ENABLED) return NextResponse.next();
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

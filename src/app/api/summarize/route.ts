@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
+import { SUPABASE_ENABLED } from "@/lib/config";
 import { SummaryError, summarizeConversation } from "@/lib/server/summarize";
 import { requireTeamMember } from "@/lib/supabase/server";
 
@@ -13,7 +14,7 @@ const Body = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY || !SUPABASE_ENABLED) {
     return NextResponse.json({ error: "Tóm tắt AI chưa được bật." }, { status: 501 });
   }
   if (!(await requireTeamMember())) return NextResponse.json({ error: "Không có quyền" }, { status: 401 });

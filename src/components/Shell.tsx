@@ -52,14 +52,26 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
         ))}
         <div className="foot">
-          {d.me ? `Đăng nhập: ${d.me.name}` : "Đang kết nối…"}
-          <br />
-          <button className="signout" onClick={signOut}>
-            Đăng xuất
-          </button>
+          {d.mode === "local" ? (
+            "Lưu trên trình duyệt này"
+          ) : (
+            <>
+              {d.me ? `Đăng nhập: ${d.me.name}` : "Đang kết nối…"}
+              <br />
+              <button className="signout" onClick={signOut}>
+                Đăng xuất
+              </button>
+            </>
+          )}
         </div>
       </nav>
       <main>
+        {d.mode === "local" && (
+          <div className="notice">
+            Dữ liệu chỉ lưu trên trình duyệt này (không chia sẻ với người khác, mất nếu xoá dữ liệu trình duyệt). Vào Cài đặt
+            → Tải bản sao lưu để giữ một bản.
+          </div>
+        )}
         {d.loadError && <div className="notice">{d.loadError}</div>}
         {d.ready ? children : !d.loadError && <p className="muted">Đang tải dữ liệu…</p>}
       </main>
