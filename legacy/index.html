@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS Ticket Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="js/constants.js" defer></script>
+<script src="js/state.js" defer></script>
+<script src="js/utils.js" defer></script>
+<script src="js/data.js" defer></script>
+<script src="js/router.js" defer></script>
+<script src="js/ticket-list.js" defer></script>
+<script src="js/drawer.js" defer></script>
+<script src="js/ai-summary.js" defer></script>
+<script src="js/clients.js" defer></script>
+<script src="js/orders.js" defer></script>
+<script src="js/reports.js" defer></script>
+<script src="js/export.js" defer></script>
+<script src="js/settings.js" defer></script>
+<script src="js/app.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <nav>
+    <div class="brand">CS Ticket Desk<small>Quản lý ticket đơn Shopify</small></div>
+    <select id="gClient" style="margin:0 6px 10px;background:#222833;color:#fff;border-color:#3a4252"><option value="">Tất cả client</option></select>
+    <a href="#tickets" data-v="tickets">Ticket <span class="count" id="nOpen">0</span></a>
+    <a href="#orders" data-v="orders">Đơn hàng</a>
+    <a href="#reports" data-v="reports">Report &amp; Analytics</a>
+    <a href="#settings" data-v="settings">Cài đặt</a>
+    <div class="foot" id="whoami">Đang kết nối…</div>
+  </nav>
+  <main>
+    <div id="dbNotice" class="notice" style="display:none"></div>
+
+    <!-- TICKETS -->
+    <section id="v-tickets">
+      <h1>Ticket</h1>
+      <p class="sub">Theo dõi trạng thái xử lý, vận chuyển và tranh chấp cho từng đơn.</p>
+      <div class="tabs" id="statusTabs"></div>
+      <div class="bar">
+        <input type="search" id="q" placeholder="Tìm mã đơn, email, tracking, tên KH…" style="min-width:260px">
+        <select id="fChannel"><option value="">Mọi kênh</option><option value="email">Email</option><option value="inbox">Shopify Inbox</option><option value="other">Khác</option></select>
+        <select id="fSent"><option value="">Mọi thái độ KH</option></select>
+        <select id="fType"><option value="">Mọi loại vấn đề</option></select>
+        <select id="fShip"><option value="">Mọi trạng thái giao</option></select>
+        <select id="fDispute"><option value="">Mọi tranh chấp</option></select>
+        <select id="fAgent"><option value="">Mọi nhân viên</option><option value="__me">Của tôi</option><option value="__none">Chưa phân công</option></select>
+        <label class="muted" style="font-size:13px"><input type="checkbox" id="fOverdue"> Quá SLA</label>
+        <span class="grow"></span>
+        <button class="btn" id="btnSyncTr" title="Lấy từ dữ liệu đơn đã đồng bộ cho ticket đã chọn; nếu không chọn, cho mọi ticket đang mở chưa có tracking">Cập nhật tracking</button>
+        <button class="btn" id="btn17">Tra 17Track (đã chọn)</button>
+        <button class="btn" id="btnExport">Xuất CSV</button>
+        <button class="btn primary" id="btnNew">+ Ticket mới</button>
+      </div>
+      <div class="panel tablewrap">
+        <table>
+          <thead><tr>
+            <th style="width:30px"><input type="checkbox" id="selAll"></th>
+            <th data-s="orderName">Đơn</th><th data-s="customerName">Khách hàng</th><th data-s="type">Vấn đề</th>
+            <th data-s="status">Trạng thái</th><th data-s="shipStatus">Giao hàng</th><th data-s="tracking">Tracking</th>
+            <th data-s="dispute">Tranh chấp</th><th data-s="assignee">Phụ trách</th><th data-s="createdAt">Tạo lúc</th><th>SLA</th>
+          </tr></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+        <div class="empty" id="tEmpty" style="display:none">Chưa có ticket nào. Vào <a href="#orders">Nhập đơn hàng</a> để tạo ticket từ đơn Shopify hoặc file CSV.</div>
+      </div>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="v-orders" style="display:none">
+      <h1>Đơn hàng</h1>
+      <p class="sub">Đơn của các client tự đổ về qua email Shopify Flow (tiêu đề bắt đầu bằng [CSD]). Có thể nhập thêm file CSV.</p>
+      <div class="grid2">
+        <div class="panel card">
+          <h3>Đồng bộ từ email</h3>
+          <div class="bar" style="margin-bottom:6px">
+            <button class="btn primary" id="btnSync">Đồng bộ ngay</button>
+            <label class="muted" style="font-size:13px"><input type="checkbox" id="autoSync"> Tự đồng bộ 3 phút/lần khi đang mở app</label>
+          </div>
+          <div class="muted" id="syncMsg" style="font-size:12.5px"></div>
+        </div>
+        <div class="panel card">
+          <h3>Nhập file CSV</h3>
+          <div class="bar">
+            <select id="csvClient"></select>
+            <input type="file" id="csvFile" accept=".csv,text/csv">
+          </div>
+          <label class="muted" style="font-size:13px"><input type="checkbox" id="csvUpdate" checked> Cập nhật tracking/supplier cho ticket đã có</label>
+          <div class="muted" id="csvMsg" style="font-size:12.5px"></div>
+        </div>
+      </div>
+      <div class="bar">
+        <input type="search" id="oSearch" placeholder="Tìm mã đơn, tên KH, email, tracking… (nhiều mã: cách nhau dấu phẩy)" style="min-width:300px;flex:1;max-width:420px">
+        <input type="date" id="oFrom" title="Đặt từ ngày"> <span class="muted">→</span> <input type="date" id="oTo" title="Đến ngày">
+        <select id="oFTicket"><option value="">Mọi đơn</option><option value="none">Chưa có ticket</option><option value="has">Đã có ticket</option></select>
+        <select id="oFTrack"><option value="">Có/không tracking</option><option value="yes">Có tracking</option><option value="no">Chưa có tracking</option></select>
+        <select id="oFShip"><option value="">Mọi trạng thái giao</option></select>
+        <select id="oFFin"><option value="">Mọi thanh toán</option></select>
+        <strong id="oCount">0 đơn</strong><span class="grow"></span>
+        <select id="bulkType"></select>
+        <button class="btn primary" id="btnBulkCreate" disabled>Tạo ticket cho đơn đã chọn</button>
+      </div>
+      <div class="panel tablewrap">
+        <table>
+          <thead><tr><th style="width:30px"><input type="checkbox" id="oSelAll"></th><th>Client</th><th>Đơn</th><th>Ngày</th><th>Khách hàng</th><th>Thanh toán</th><th>Fulfillment</th><th>Giao hàng</th><th>Tracking</th><th>Ticket</th></tr></thead>
+          <tbody id="oBody"></tbody>
+        </table>
+        <div class="empty" id="oEmpty">Chưa có đơn nào. Bấm "Đồng bộ ngay" để lấy đơn từ email Shopify Flow.</div>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="v-reports" style="display:none">
+      <h1>Report &amp; Analytics</h1>
+      <p class="sub">Tính trên các ticket tạo trong khoảng thời gian đã chọn.</p>
+      <div class="bar">
+        <input type="date" id="rFrom"> <span class="muted">→</span> <input type="date" id="rTo">
+        <select id="rAgent"><option value="">Toàn đội</option></select>
+        <button class="btn sm" data-range="7">7 ngày</button><button class="btn sm" data-range="30">30 ngày</button><button class="btn sm" data-range="month">Tháng này</button>
+        <span class="grow"></span>
+        <button class="btn" id="btnRepExport">Xuất báo cáo CSV</button>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="panel card" style="margin-bottom:14px"><h3>Ticket theo ngày</h3><div class="cols" id="chDays"></div><div class="axis" id="chDaysAx"></div></div>
+      <div class="grid2">
+        <div class="panel card"><h3>Theo loại vấn đề</h3><div id="chType"></div></div>
+        <div class="panel card"><h3>Cách giải quyết</h3><div id="chRes"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel card"><h3>Theo kênh liên hệ</h3><div id="chChan"></div></div>
+        <div class="panel card"><h3>Thái độ khách hàng</h3><div id="chSent"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel card"><h3>Trạng thái giao hàng</h3><div id="chShip"></div></div>
+        <div class="panel card"><h3>Tranh chấp / chargeback</h3><div id="chDisp"></div></div>
+      </div>
+      <div class="panel card">
+        <h3>Đánh giá theo nhân viên</h3>
+        <div style="overflow:auto"><table id="agentTable"></table></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="v-settings" style="display:none">
+      <h1>Cài đặt</h1>
+      <p class="sub">Mục tiêu SLA dùng để tính "đúng hạn" trong danh sách ticket và báo cáo. Áp dụng cho cả đội.</p>
+      <div class="panel card" style="max-width:520px">
+        <div class="fgrid">
+          <label>Phản hồi lần đầu trong (giờ)<input type="number" id="setFrt" min="1"></label>
+          <label>Giải quyết trong (giờ)<input type="number" id="setRes" min="1"></label>
+          <label class="full">Tiền tệ hiển thị<input type="text" id="setCur" placeholder="USD"></label>
+        </div>
+        <button class="btn primary" id="btnSaveSet">Lưu</button>
+      </div>
+      <div class="panel card" style="margin-top:14px">
+        <h3>Client</h3>
+        <p class="muted" style="font-size:13px;margin:0 0 10px">Client tự xuất hiện khi email Flow đầu tiên của store đó về. Để trống ô SLA thì dùng mục tiêu chung ở trên.</p>
+        <div style="overflow:auto"><table><thead><tr><th>Tên hiển thị</th><th>Store</th><th>Phản hồi đầu (giờ)</th><th>Giải quyết (giờ)</th><th>Đơn</th><th>Ticket mở</th><th>Email gần nhất</th></tr></thead><tbody id="clBody"></tbody></table></div>
+        <div class="bar" style="margin-top:10px"><button class="btn primary" id="btnSaveClients">Lưu client</button></div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="panel card">
+          <h3>Dữ liệu &amp; đồng bộ</h3>
+          <div class="fgrid">
+            <label>Lần đầu: lấy email của (ngày gần nhất)<input type="number" id="setLookback" min="1" max="60"></label>
+            <label>Giữ đơn không có ticket trong (ngày)<input type="number" id="setRetention" min="30" max="365"></label>
+          </div>
+          <button class="btn" id="btnSaveSync">Lưu</button>
+          <div class="muted" id="usageMsg" style="font-size:12.5px;margin-top:8px"></div>
+        </div>
+        <div class="panel card">
+          <h3>Sao lưu</h3>
+          <p class="muted" style="font-size:13px;margin:0 0 10px">Tải toàn bộ ticket, đơn và client về máy dưới dạng file JSON. Nên sao lưu mỗi tuần.</p>
+          <button class="btn primary" id="btnBackup">Tải bản sao lưu</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="ov"></div>
+<aside class="drawer" id="dr">
+  <div class="dhead"><h2 id="dTitle">Ticket</h2><button class="btn danger sm" id="dDel">Xoá</button><button class="btn sm" id="dClose">Đóng</button></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
+<div class="modal" id="mConfirm"><div class="box"><p id="mText"></p><div class="bar" style="justify-content:flex-end;margin:0"><button class="btn" id="mNo">Huỷ</button><button class="btn primary" id="mYes">Đồng ý</button></div></div></div>
+<div class="modal" id="mCopy"><div class="box"><p>Không tải file được ở chế độ xem này. Sao chép nội dung CSV bên dưới:</p><textarea id="copyArea" style="min-height:200px" readonly></textarea><div class="bar" style="justify-content:flex-end;margin:8px 0 0"><button class="btn" id="copyBtn">Sao chép</button><button class="btn primary" id="copyClose">Đóng</button></div></div></div>
+<div class="toast" id="toast"></div>
+</body>
+</html>
