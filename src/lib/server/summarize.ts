@@ -59,30 +59,26 @@ export class SummaryError extends Error {
   }
 }
 
-const MAX_CHARS = 100_000;
+/** Same cap as the original app: only the first 30,000 characters are summarized. */
+const MAX_CHARS = 30_000;
 
 export async function summarizeConversation(input: {
   text: string;
   channel: string;
   orderName: string;
 }): Promise<ConversationSummary> {
-  if (input.text.length > MAX_CHARS) {
-    throw new SummaryError(`Hội thoại quá dài (${input.text.length} ký tự, tối đa ${MAX_CHARS}). Hãy dán phần gần nhất.`, 413);
-  }
-
   const user = `Kênh: ${label(CHANNELS, input.channel || "email")}. Đơn: ${input.orderName || "không rõ"}.
 
 <conversation>
-${input.text}
+${input.text.slice(0, MAX_CHARS)}
 </conversation>`;
 
   let response;
   try {
-    response = await getClient().beta.messages.create({
-      model: "claude-opus-5-5",
+    // The original app asked for the "quick" model tier: Haiku is the fast, low-cost model.
+    response = await getClient().messages.create({
+      model: "claude-haiku-5-5",
       max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
       system: SYSTEM,
       output_config: {
         effort: "low",

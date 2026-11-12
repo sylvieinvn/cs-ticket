@@ -13,10 +13,13 @@ export class GmailError extends Error {
   }
 }
 
-async function accessToken(): Promise<string> {
-  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GMAIL_REFRESH_TOKEN } = process.env;
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GMAIL_REFRESH_TOKEN) {
-    throw new GmailError("Chưa cấu hình Gmail (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GMAIL_REFRESH_TOKEN).", 500);
+async function accessToken(refreshToken: string): Promise<string> {
+  const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;
+  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+    throw new GmailError("Đồng bộ Gmail chưa được bật (thiếu GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).", 501);
+  }
+  if (!refreshToken) {
+    throw new GmailError("Chưa kết nối Gmail nhận dữ liệu — vào Cài đặt → Kết nối Gmail.", 409);
   }
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -24,12 +27,12 @@ async function accessToken(): Promise<string> {
     body: new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
       client_secret: GOOGLE_CLIENT_SECRET,
-      refresh_token: GMAIL_REFRESH_TOKEN,
+      refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),
     cache: "no-store",
   });
-  if (!res.ok) throw new GmailError("Kết nối Gmail đã hết hạn — cần tạo lại GMAIL_REFRESH_TOKEN.", res.status);
+  if (!res.ok) throw new GmailError("Kết nối Gmail đã hết hạn — kết nối lại trong Cài đặt → Kết nối Gmail.", 409);
   const json = (await res.json()) as { access_token: string };
   return json.access_token;
 }
@@ -58,17 +61,20 @@ export interface MailMessage {
   text: string;
 }
 
-export function createGmail() {
+export function createGmail(refreshToken: string) {
   let token: Promise<string> | null = null;
 
   async function get<T>(path: string, params: Record<string, string>): Promise<T> {
-    token ??= accessToken();
+    token ??= accessToken(refreshToken);
     const res = await fetch(`${API}${path}?${new URLSearchParams(params)}`, {
       headers: { Authorization: `Bearer ${await token}` },
       cache: "no-store",
     });
     if (res.status === 429 || res.status >= 500) {
       throw new GmailError("Gmail tạm thời không phản hồi, thử lại sau ít phút.", res.status);
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new GmailError("Chưa cho phép app đọc Gmail — kết nối lại trong Cài đặt → Kết nối Gmail.", 409);
     }
     if (!res.ok) throw new GmailError(`Lỗi Gmail ${res.status}`, res.status);
     return (await res.json()) as T;

@@ -13,6 +13,7 @@ import {
   type SetStateAction,
 } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { mergeBackup, type Backup, type MergeResult } from "@/lib/backup";
 import { SUPABASE_ENABLED } from "@/lib/config";
 import { now } from "@/lib/format";
 import { LOCAL_KEY, loadLocal, saveLocal } from "@/lib/localStore";
@@ -20,7 +21,7 @@ import { applyOrderToTicket, clientDocId, orderDocId, shopShortName } from "@/li
 import { getBrowserSupabase } from "@/lib/supabase/client";
 import { fetchAllDocs, upsertDocs, type DocRow } from "@/lib/supabase/docs";
 import { slaFor as slaForTicket, type SlaLimits } from "@/lib/tickets";
-import { DEFAULT_SETTINGS, type Client, type Order, type Settings, type SyncState, type Ticket } from "@/lib/types";
+import { DEFAULT_SETTINGS, type Client, type GmailAccount, type Order, type Settings, type SyncState, type Ticket } from "@/lib/types";
 import { useUi } from "./UiProvider";
 
 interface Me {
@@ -41,6 +42,8 @@ interface DataContext {
   clients: Record<string, Client>;
   settings: Settings;
   syncState: SyncState;
+  /** Mailbox connected for Gmail sync (cloud mode), or null. */
+  gmailAccount: GmailAccount | null;
   curClient: string;
   setCurClient(shop: string): void;
   nameOf(id: string | undefined): string;
@@ -57,6 +60,8 @@ interface DataContext {
   saveMyName(name: string): Promise<void>;
   /** Copy order data onto matching tickets and save them. Returns how many tickets changed. */
   applyOrdersToTickets(orders: Order[]): Promise<number>;
+  /** Merge a backup file into the current data (newer copy wins, nothing is deleted). */
+  importBackup(b: Backup): Promise<MergeResult["added"]>;
 }
 
 const Ctx = createContext<DataContext | null>(null);
@@ -85,7 +90,12 @@ function applyChange<T>(set: Dispatch<SetStateAction<ById<T>>>, p: ChangePayload
       if (id) delete next[id];
     } else {
       const row = p.new as DocRow<T> | null;
-      if (row?.id) next[row.id] = row.data;
+      if (!row?.id) return prev;
+      // The echo of an earlier save can arrive after a newer local edit: keep the newer copy.
+      const have = (prev[row.id] as { updatedAt?: string } | undefined)?.updatedAt;
+      const got = (row.data as { updatedAt?: string } | null)?.updatedAt;
+      if (have && got && got < have) return prev;
+      next[row.id] = row.data;
     }
     return next;
   });
@@ -107,6 +117,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [clientsById, setClientsById] = useState<ById<Client>>({});
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [syncState, setSyncState] = useState<SyncState>({});
+  const [gmailAccount, setGmailAccount] = useState<GmailAccount | null>(null);
   const [names, setNames] = useState<Record<string, string>>({});
   const [curClient, setCurClientState] = useState("");
 
@@ -126,6 +137,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const applyConfig = useCallback((id: string, data: unknown) => {
     if (id === "settings" && data) setSettings({ ...DEFAULT_SETTINGS, ...(data as Partial<Settings>) });
     if (id === "sync_gmail") setSyncState((data as SyncState) ?? {});
+    if (id === "gmail_account") setGmailAccount((data as GmailAccount) ?? null);
+    // Display names of people from the original claude.ai app (their ids aren't Supabase users).
+    if (id === "people" && data) setNames((n) => ({ ...(data as Record<string, string>), ...n }));
   }, []);
 
   /* ---------- browser-only mode: load from / save to localStorage ---------- */
@@ -272,17 +286,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   /* ---------- writes (state first; Supabase too when enabled) ---------- */
 
+  // Saves of the same ticket are sent one after another so quick edits reach the database in order.
+  const writeQueue = useRef(new Map<string, Promise<void>>());
   const saveTicket = useCallback(
     async (t: Ticket) => {
       const x = { ...t, updatedAt: now() };
       ticketsRef.current = { ...ticketsRef.current, [x.id]: x };
       setTicketsById((prev) => ({ ...prev, [x.id]: x }));
       if (!sb) return;
-      try {
-        await upsertDocs(sb, "tickets", [{ id: x.id, data: x }]);
-      } catch (e) {
-        toast("Không lưu được: " + (e instanceof Error ? e.message : "lỗi"));
-      }
+      const queue = writeQueue.current;
+      const write = (queue.get(x.id) ?? Promise.resolve()).then(async () => {
+        try {
+          await upsertDocs(sb, "tickets", [{ id: x.id, data: x }]);
+        } catch (e) {
+          toast("Không lưu được: " + (e instanceof Error ? e.message : "lỗi"));
+        }
+      });
+      queue.set(x.id, write);
+      await write;
+      if (queue.get(x.id) === write) queue.delete(x.id);
     },
     [sb, toast],
   );
@@ -367,6 +389,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [me, saveTicket],
   );
 
+  const importBackup = useCallback(
+    async (b: Backup) => {
+      const r = mergeBackup({ tickets: ticketsRef.current, orders: ordersById, clients: clientsById }, b);
+      if (sb) {
+        // Upload only what changed; realtime brings it to other open tabs.
+        const changed = <T,>(next: Record<string, T>, prev: Record<string, T>) =>
+          Object.entries(next).filter(([id, x]) => prev[id] !== x).map(([id, data]) => ({ id, data }));
+        await upsertDocs(sb, "tickets", changed(r.tickets, ticketsRef.current));
+        await upsertDocs(sb, "orders", changed(r.orders, ordersById));
+        await upsertDocs(sb, "clients", changed(r.clients, clientsById));
+      }
+      ticketsRef.current = r.tickets;
+      setTicketsById(r.tickets);
+      setOrdersById(r.orders);
+      setClientsById(r.clients);
+      return r.added;
+    },
+    [sb, ordersById, clientsById],
+  );
+
   const value: DataContext = {
     mode: sb ? "cloud" : "local",
     ready,
@@ -378,6 +420,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     clients,
     settings,
     syncState,
+    gmailAccount,
     curClient,
     setCurClient,
     nameOf,
@@ -392,6 +435,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     saveSettings,
     saveMyName,
     applyOrdersToTickets,
+    importBackup,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

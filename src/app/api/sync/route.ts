@@ -13,8 +13,8 @@ export const maxDuration = 60;
  */
 export async function POST(request: NextRequest) {
   const env = process.env;
-  if (!SUPABASE_ENABLED || !env.SUPABASE_SERVICE_ROLE_KEY || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GMAIL_REFRESH_TOKEN) {
-    return NextResponse.json({ error: "Đồng bộ Gmail chưa được bật. Dùng Nhập file CSV trong lúc này." }, { status: 501 });
+  if (!SUPABASE_ENABLED || !env.SUPABASE_SERVICE_ROLE_KEY || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return NextResponse.json({ error: "Đồng bộ Gmail chưa được bật trên máy chủ. Dùng Nhập file CSV trong lúc này." }, { status: 501 });
   }
 
   const secret = process.env.CRON_SECRET;

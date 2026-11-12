@@ -10,6 +10,8 @@ export default function LoginPage() {
   // Browser-only mode has no accounts.
   useEffect(() => {
     if (!SUPABASE_ENABLED) router.replace("/tickets");
+    else if (new URLSearchParams(window.location.search).get("error") === "link")
+      setMsg("Link đăng nhập đã hết hạn hoặc đã được dùng. Gửi lại link mới.");
   }, [router]);
 
   const [email, setEmail] = useState("");

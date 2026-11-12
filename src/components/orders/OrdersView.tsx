@@ -1,21 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type MouseEvent } from "react";
 import { useData } from "@/components/providers/DataProvider";
+import { useSync } from "@/components/providers/SyncProvider";
 import { useUi } from "@/components/providers/UiProvider";
 import { Dash, Pill } from "@/components/ui/Pill";
 import { SHIP, STATUSES, TYPES, label } from "@/lib/constants";
 import { fmtD, fmtDT } from "@/lib/format";
 import { csvToOrders, orderKey, parseCSV, searchNorm, ticketFor } from "@/lib/orders";
 import { newTicket, track17 } from "@/lib/tickets";
-import type { Order, SyncResult } from "@/lib/types";
+import type { Order } from "@/lib/types";
 
 const PAGE = 300;
-const AUTO_KEY = "csdAutoOn";
-const AUTO_MS = 180_000;
-
-type SyncResponse = { status: "ok"; result: SyncResult; partial: boolean } | { status: "busy" } | { error: string };
 
 export function OrdersView() {
   const d = useData();
@@ -34,9 +31,7 @@ export function OrdersView() {
   const [bulkType, setBulkType] = useState(TYPES[0]);
   const [busyCreate, setBusyCreate] = useState(false);
 
-  const [syncing, setSyncing] = useState(false);
-  const [syncErr, setSyncErr] = useState("");
-  const [auto, setAuto] = useState(false);
+  const { syncing, syncErr, available, auto, setAuto, runSync } = useSync();
 
   const [csvClient, setCsvClient] = useState("");
   const [csvUpdate, setCsvUpdate] = useState(true);
@@ -45,61 +40,9 @@ export function OrdersView() {
   useEffect(() => setCsvClient((c) => c || d.curClient), [d.curClient]);
   useEffect(() => setLimit(PAGE), [search, from, to, fTicket, fTrack, fShip, fFin]);
 
-  /* ---------- Gmail sync ---------- */
-
-  const syncingRef = useRef(false);
-  const runSync = useCallback(
-    async (manual: boolean) => {
-      if (syncingRef.current) return;
-      syncingRef.current = true;
-      setSyncing(true);
-      setSyncErr("");
-      try {
-        const res = await fetch("/api/sync", { method: "POST" });
-        const r = (await res.json()) as SyncResponse;
-        if ("error" in r) throw new Error(r.error);
-        if (r.status === "busy") {
-          if (manual) ui.toast("Đang có một lần đồng bộ khác chạy, thử lại sau ít phút");
-        } else if (manual) {
-          const { messages, orders, tickets } = r.result;
-          ui.toast(
-            `Đã đồng bộ: ${messages} email mới · ${orders} đơn cập nhật · ${tickets} ticket cập nhật` +
-              (r.partial ? " — còn email, bấm đồng bộ lần nữa" : ""),
-          );
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Lỗi đồng bộ";
-        setSyncErr(msg);
-        if (manual) ui.toast(msg);
-      } finally {
-        syncingRef.current = false;
-        setSyncing(false);
-      }
-    },
-    [ui],
-  );
-
-  useEffect(() => {
-    try {
-      setAuto(localStorage.getItem(AUTO_KEY) === "1");
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    if (!auto) return;
-    const id = setInterval(() => !document.hidden && runSync(false), AUTO_MS);
-    return () => clearInterval(id);
-  }, [auto, runSync]);
-
-  function toggleAuto(on: boolean) {
-    setAuto(on);
-    try {
-      localStorage.setItem(AUTO_KEY, on ? "1" : "0");
-    } catch {}
-  }
-
   const s = d.syncState;
   const syncMsg =
+    (d.mode === "local" ? "Chế độ lưu trên trình duyệt không đồng bộ được email. Dùng Nhập file CSV." : "") ||
     syncErr ||
     s.error ||
     (s.lastSyncAt
@@ -225,11 +168,11 @@ export function OrdersView() {
         <div className="panel card">
           <h3>Đồng bộ từ email</h3>
           <div className="bar" style={{ marginBottom: 6 }}>
-            <button className="btn primary" onClick={() => runSync(true)} disabled={syncing}>
+            <button className="btn primary" onClick={() => runSync(true)} disabled={syncing || d.mode === "local"}>
               {syncing ? "Đang đồng bộ…" : "Đồng bộ ngay"}
             </button>
             <label className="muted chk">
-              <input type="checkbox" checked={auto} onChange={(e) => toggleAuto(e.target.checked)} /> Tự đồng bộ 3 phút/lần khi đang mở app
+              <input type="checkbox" checked={auto && available} disabled={!available} onChange={(e) => setAuto(e.target.checked)} /> Tự đồng bộ 3 phút/lần khi đang mở app
             </label>
           </div>
           <div className="muted note">{syncMsg}</div>

@@ -119,6 +119,13 @@ export interface SyncState {
   runningSince?: string;
 }
 
+/** Mailbox connected for Gmail sync (app_config "gmail_account"). */
+export interface GmailAccount {
+  email: string;
+  connectedAt: string;
+  by: string;
+}
+
 export const DEFAULT_SETTINGS: Settings = {
   frtHours: 24,
   resHours: 72,

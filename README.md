@@ -41,7 +41,7 @@ Requires Node.js 20+.
 
 2. **Supabase** (optional, for team mode)
    - Create a project at [supabase.com](https://supabase.com).
-   - In the SQL editor, run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+   - In the SQL editor, run the files in [`supabase/migrations/`](supabase/migrations/) in order.
    - Add your team's emails (only these can see data):
      ```sql
      insert into public.team_members (email) values ('you@example.com'), ('teammate@example.com');
@@ -62,11 +62,11 @@ These stay off (the app shows "chưa được bật") until their variables are 
 **AI summaries** — create a key at [console.anthropic.com](https://console.anthropic.com) and set `ANTHROPIC_API_KEY`.
 
 **Gmail sync** (the mailbox that receives the Flow emails) — set `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API) plus:
-- In Google Cloud, enable the Gmail API and create an OAuth client (type "Web application"), adding `https://developers.google.com/oauthplayground` as a redirect URI. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
-- In the [OAuth Playground](https://developers.google.com/oauthplayground), click the gear icon → "Use your own OAuth credentials", authorize scope `https://www.googleapis.com/auth/gmail.readonly` while signed in as the Flow mailbox, exchange for tokens, and set `GMAIL_REFRESH_TOKEN`.
-- If the OAuth consent screen is in "Testing" mode, refresh tokens expire after 7 days — publish the app (internal use is fine) to keep it working.
+- In Google Cloud, enable the Gmail API and create an OAuth client (type "Web application") with redirect URIs `https://<your-app>/api/gmail/callback` and `http://localhost:3000/api/gmail/callback`. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+- In the app, open **Cài đặt → Kết nối Gmail** and sign in as the mailbox that receives the Flow emails (read-only access). The token is kept in the server-only `private_config` table. (`GMAIL_REFRESH_TOKEN` still works as a fallback.)
+- If the OAuth consent screen is in "Testing" mode, add that mailbox as a test user; refresh tokens then expire after 7 days — publish the app (internal use is fine) to keep it working.
 
-**Scheduled sync** — the Orders page has a "sync every 3 minutes while open" toggle. To sync even when nobody has the app open, set `CRON_SECRET` and have a scheduler call:
+**Scheduled sync** — the Orders page has a "sync every 3 minutes while the app is open" toggle (it turns on after the first successful sync, like the original app). To sync even when nobody has the app open, set `CRON_SECRET` and have a scheduler call:
 
 ```
 POST https://<your-app>/api/sync

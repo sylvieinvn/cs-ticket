@@ -12,7 +12,8 @@ import {
 import { now } from "@/lib/format";
 import { deleteDocs, fetchAllDocs, upsertDocs, type DocRow } from "@/lib/supabase/docs";
 import { DEFAULT_SETTINGS, type Client, type Order, type Settings, type SyncResult, type SyncState, type Ticket } from "@/lib/types";
-import { createGmail, type MailMessage } from "./gmail";
+import { createGmail, GmailError, type MailMessage } from "./gmail";
+import { getRefreshToken } from "./gmailAuth";
 
 const LOCK_MS = 5 * 60_000;
 const TIME_BUDGET_MS = 45_000;
@@ -38,12 +39,15 @@ export async function syncEmails(sb: SupabaseClient, byUserId: string): Promise<
   const started = Date.now();
   const settings: Settings = { ...DEFAULT_SETTINGS, ...((await getConfig<Partial<Settings>>(sb, "settings")) ?? {}) };
   const state: SyncState = (await getConfig<SyncState>(sb, "sync_gmail")) ?? {};
+  // Fail fast (without taking the lock) when no mailbox is connected yet.
+  const refreshToken = await getRefreshToken(sb);
+  if (!refreshToken) throw new GmailError("Chưa kết nối Gmail nhận dữ liệu — vào Cài đặt → Kết nối Gmail.", 409);
+  const gmail = createGmail(refreshToken);
 
   if (state.runningSince && Date.now() - Date.parse(state.runningSince) < LOCK_MS) return { status: "busy" };
   await setConfig(sb, "sync_gmail", { ...state, runningSince: now() });
 
   try {
-    const gmail = createGmail();
     const lookback = Number(settings.lookbackDays) || 14;
     const since = state.lastSyncAt
       ? new Date(Date.parse(state.lastSyncAt) - 2 * 864e5)
