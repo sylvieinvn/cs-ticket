@@ -118,3 +118,7 @@ nav .signout{background:none;border:none;color:#8b94a3;padding:0;margin-top:6px;
 .login input{width:100%;margin:10px 0}
 .fgrid .full{grid-column:1/-1}
 .fgrid .field{display:flex;flex-direction:column;gap:4px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tagpick{display:flex;flex-wrap:wrap;gap:6px}
+.tagpick button{border:1px solid transparent;cursor:pointer;font:inherit;font-size:12px}
+.tagpick button.off{background:#fff;border-color:var(--line);color:var(--muted)}

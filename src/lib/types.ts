@@ -45,6 +45,8 @@ export interface Ticket {
   assignee: string;
   /** Free-text agent name (works without team accounts). Optional: older tickets don't have it. */
   agent?: string;
+  /** Tag values from TAGS (e.g. "urgent", "vip"). Optional: older tickets don't have it. */
+  tags?: string[];
   createdAt: string;
   createdBy: string;
   firstResponseAt: string;

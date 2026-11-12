@@ -63,6 +63,13 @@ export const PRIORITY: Option[] = [
   ["urgent", "Khẩn"],
 ];
 
+/** Ticket tags (a ticket can have several). */
+export const TAGS: Option[] = [
+  ["attention", "Needs attention", "s-open"],
+  ["urgent", "Urgent", "s-bad"],
+  ["vip", "VIP", "s-wait"],
+];
+
 export const CHANNELS: Option[] = [
   ["email", "Email"],
   ["inbox", "Shopify Inbox"],

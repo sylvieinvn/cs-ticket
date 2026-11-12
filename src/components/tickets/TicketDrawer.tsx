@@ -6,7 +6,7 @@ import { useUi } from "@/components/providers/UiProvider";
 import { CommitInput } from "@/components/ui/CommitInput";
 import { Pill } from "@/components/ui/Pill";
 import {
-  CHANNELS, DISPUTE, PRIORITY, QA, RESOLUTIONS, SENT, SHIP, STATUSES, TYPES, WAITING, label, type Option,
+  CHANNELS, DISPUTE, PRIORITY, QA, RESOLUTIONS, SENT, SHIP, STATUSES, TAGS, TYPES, WAITING, label, type Option,
 } from "@/lib/constants";
 import { clone, fmtDT, fmtH, now } from "@/lib/format";
 import { addLog, setStatus, slaState, track17 } from "@/lib/tickets";
@@ -67,6 +67,14 @@ export function TicketDrawer({ ticketId, onClose }: { ticketId: string; onClose(
       if (f === "dispute") addLog(x, "system", "Tranh chấp: " + label(DISPUTE, raw), by);
       if (f === "resolution" && raw) addLog(x, "system", "Giải quyết: " + raw, by);
       (x as unknown as Record<string, unknown>)[f] = v;
+    });
+
+  const toggleTag = (tag: string) =>
+    mutate((x) => {
+      const cur = x.tags || [];
+      const on = !cur.includes(tag);
+      x.tags = on ? [...cur, tag] : cur.filter((g) => g !== tag);
+      addLog(x, "system", (on ? "Thêm tag: " : "Bỏ tag: ") + label(TAGS, tag), by);
     });
 
   async function summarize() {
@@ -156,6 +164,19 @@ export function TicketDrawer({ ticketId, onClose }: { ticketId: string; onClose(
 
           <div className="sect">Xử lý</div>
           <div className="fgrid">
+            <div className="field full">
+              <span className="muted small">Tag</span>
+              <div className="tagpick">
+                {TAGS.map(([v, l, cls]) => {
+                  const on = !!t.tags?.includes(v);
+                  return (
+                    <button key={v} type="button" className={`pill ${on ? cls : "off"}`} aria-pressed={on} onClick={() => toggleTag(v)}>
+                      {on ? "✓ " : "+ "}{l}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <label>Trạng thái<Select options={STATUSES} value={t.status} onChange={(v) => setField("status", v)} /></label>
             <label>
               Client
